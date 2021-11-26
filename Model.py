@@ -102,7 +102,7 @@ class Item(object):
             
         
 
-    def save(self):
+    def save(self, call_on_edit = False):
         db_connection = sql.connect(self.Model.INSApp.database_path)
 
         #get old data as dict
@@ -130,7 +130,7 @@ class Item(object):
         db_connection.commit() 
         db_connection.close()
         self.ui_obj.setText(self.__str__())
-        if self.model.on_edit != None:
+        if self.model.on_edit != None and call_on_edit:
             self.model.on_edit(old_data = old_data, new_data = new_data )
         
 

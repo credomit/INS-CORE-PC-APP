@@ -268,7 +268,7 @@ class View_Item_Ui_Form(object):
                 print(item.model.fields[field].Get_UI_Value_Function)
                 setattr( item, field, getattr(vars(self)[field] , item.model.fields[field].Get_UI_Value_Function  )())
 
-        item.save()
+        item.save(call_on_edit = True)
         Form.close()
 
 
