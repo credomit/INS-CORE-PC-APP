@@ -513,6 +513,8 @@ class View_Item_Ui_Form(object):
                 setattr(self, field, self.fields[field].UI_Field(Form) )
                 ui_field = vars(self)[field]
                 ui_field.setObjectName(field)
+                for pr in self.fields[field].properties:
+                    getattr(ui_field, pr['property_name'])(pr['value'])
                 
                 if edit_mode:
                     field_value = item_obj.model.fields[field].TYPE(getattr(self.item_obj, field) )

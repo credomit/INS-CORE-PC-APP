@@ -21,6 +21,7 @@ class Fields(object):
         Get_UI_Value_Function   = 'text'
         Set_UI_Value_Function   = 'setText'
         default                 =  ''
+        properties              = []
     
     class TextField(Field):
         field_type              = 'TextField'
@@ -30,6 +31,7 @@ class Fields(object):
         Get_UI_Value_Function   = 'toPlainText'
         Set_UI_Value_Function   = 'setPlainText'
         default                 =  ''
+        properties              = []
 
     class IntegerField(Field):
         field_type              = 'IntegerField'
@@ -39,7 +41,13 @@ class Fields(object):
         Get_UI_Value_Function   = 'value'
         Set_UI_Value_Function   = 'setValue'
         default                 =  0
-
+        properties              = [
+            {
+                'property_name' : 'setMaximum',
+                'value'         : 1000000000000000000000000000000
+            }
+        ]
+        
     class FloatField(Field):
         field_type              = 'FloatField'
         TYPE                    = float
@@ -48,6 +56,12 @@ class Fields(object):
         Get_UI_Value_Function   = 'value'
         Set_UI_Value_Function   = 'setValue'
         default                 =  0.0
+        properties              = [
+            {
+                'property_name' : 'setMaximum',
+                'value'         : 1000000000000000000000000000000
+            }
+        ]
 
     class BoolField(Field):
         field_type              = 'BoolField'
@@ -57,6 +71,7 @@ class Fields(object):
         Get_UI_Value_Function   = 'isChecked'
         Set_UI_Value_Function   = 'setChecked'
         default                 =  False
+        properties              = []
 
     class DateField(Field):
         field_type              = 'DateField'
@@ -64,6 +79,7 @@ class Fields(object):
         data_base_type          = 'TEXT'
         UI_Field                = QtWidgets.QDateEdit
         default                 =  False
+        properties              = []
 
 
     class ListField(Field):
@@ -75,6 +91,7 @@ class Fields(object):
         default                 = []
         items_list              = []
         data_from_DictField     = None
+        properties              = []
 
 
     class DictField(Field):
@@ -84,6 +101,7 @@ class Fields(object):
         UI_Field                = QtWidgets.QComboBox
         Get_UI_Value_Function   = 'currentText'
         default                 =  ''
+        properties              = []
 
 
 
@@ -93,6 +111,7 @@ class Fields(object):
         data_base_type          = 'int'
         UI_Field                = QtWidgets.QComboBox
         default                 =  ''
+        properties              = []
         
 
     class ManyToManyField(Field):
@@ -104,6 +123,7 @@ class Fields(object):
         default                 =  []
         on_add                  = None
         on_delete               = None
+        properties              = []
 
     
         
