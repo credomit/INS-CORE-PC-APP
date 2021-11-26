@@ -261,7 +261,6 @@ class Model(object):
                         
                     elif self.fields[columns[i]].field_type == 'ManyToManyField':
                         try:
-                            print(type(item[i]), item[i])
                             data[columns[i]] = json.loads(item[i].replace("'",'"'))
                         except:
                             pass
@@ -335,13 +334,15 @@ class Model(object):
         if dict_inner_data != None:
             inner_data = dict_inner_data
 
+        print(inner_data)
+
         fields  = []
         data    = []
         for field in inner_data.keys():
             fields.append(str(field))
 
 
-            if self.fields[field].TYPE in [str, [list, dict, set] ]:
+            if self.fields[field].TYPE in [ [list, dict, set] ,]:
                 inner_data[field] = json.dumps(inner_data[field])
             
             inner_data[field] = str(inner_data[field])
