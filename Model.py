@@ -221,7 +221,8 @@ class Model(object):
                 else:
                     ex_status = True
                     for word in text_words:
-                        if word not in obj_data:
+                        print( word , ' '.join(obj_words))
+                        if word not in ' '.join(obj_words):
                             ex_status = False
 
                     if ex_status:

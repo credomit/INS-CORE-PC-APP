@@ -44,7 +44,7 @@ class Fields(object):
         properties              = [
             {
                 'property_name' : 'setMaximum',
-                'value'         : 1000000000000000000000000000000
+                'value'         : 2147483647
             }
         ]
         
@@ -59,7 +59,7 @@ class Fields(object):
         properties              = [
             {
                 'property_name' : 'setMaximum',
-                'value'         : 1000000000000000000000000000000
+                'value'         : 2147483647
             }
         ]
 
