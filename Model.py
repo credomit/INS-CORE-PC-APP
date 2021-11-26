@@ -139,6 +139,7 @@ class Model(object):
 
     
     view_name           = ' f" {item.model.__class__.__name__} object ({item.id})"'
+    tooltip             = ''
     add_conditions      = {}
     on_add              = None
     on_edit             = None
@@ -289,6 +290,8 @@ class Model(object):
     def add_item_to_list(self, obj):
         item = QtWidgets.QListWidgetItem()
         item.setData(2,str(obj))
+        item.setToolTip(replace_variable_value(obj, self.tooltip))
+        
         item.setData(6,obj)
         obj.ui_obj = item
         self.ui_list.addItem(item)
