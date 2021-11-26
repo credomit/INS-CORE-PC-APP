@@ -213,10 +213,19 @@ class Model(object):
                         obj_data[i] = str(obj_data[i])
 
 
-
+                
                 obj_words = set(' '.join(obj_data).split(' ')) #convert all data to words set
                 if text_words.issubset(obj_words):
                     self.add_item_to_list(item_object)
+                
+                else:
+                    ex_status = True
+                    for word in text_words:
+                        if word not in obj_data:
+                            ex_status = False
+
+                    if ex_status:
+                        self.add_item_to_list(item_object)
         
         else:
             for item_object in self.objects:
