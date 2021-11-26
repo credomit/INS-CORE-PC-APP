@@ -291,7 +291,6 @@ class Model(object):
         item = QtWidgets.QListWidgetItem()
         item.setData(2,str(obj))
         item.setToolTip(replace_variable_value(obj, self.tooltip))
-        
         item.setData(6,obj)
         obj.ui_obj = item
         self.ui_list.addItem(item)

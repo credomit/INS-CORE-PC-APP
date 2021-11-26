@@ -486,6 +486,7 @@ class View_Item_Ui_Form(object):
 
                         item_ui = QtWidgets.QListWidgetItem()
                         item_ui.setText(view_name)
+                        item_ui.setToolTip(replace_variable_value(subfield, self.tooltip))
                         item_ui.setData(6,subfield)
                         listWidget.addItem(item_ui)
 
