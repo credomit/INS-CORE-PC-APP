@@ -409,7 +409,7 @@ class View_Item_Ui_Form(object):
                 horizontalLayout.setObjectName(field+"horizontalLayout")
                 horizontalLayout.setContentsMargins(0, 0, 0, 0)
 
-                setattr(self, field+'comboBox', QComboBox(horizontalLayoutWidget))
+                setattr(self, field, QComboBox(horizontalLayoutWidget))
                 comboBox = getattr(self, field)
                 comboBox.setObjectName(field)
 
