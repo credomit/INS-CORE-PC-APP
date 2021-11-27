@@ -94,6 +94,18 @@ class Fields(object):
         properties              = []
 
 
+    class CustomListField(Field):
+        field_type              = 'CustomListField'
+        TYPE                    = str
+        data_base_type          = 'TEXT'
+        UI_Field                = QtWidgets.QComboBox
+        Get_UI_Value_Function   = 'currentText'
+        default                 = []
+        items_list              = []
+        data_from_DictField     = None
+        properties              = []
+
+
     class DictField(Field):
         field_type              = 'DictField'
         TYPE                    = str

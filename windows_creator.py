@@ -32,7 +32,7 @@ class Loading_UI(object):
             self.exit.setVisible(False)
 
             config['settings']['last_opened_location']=file_name[0]
-            config.write(open('settings.ini','w'))
+            config.write(open(os.path.join('INSLPCModel','settings.ini'),'w'))
 
             self.app.database_path = file_name[0]
             l_ui.close()
@@ -50,7 +50,7 @@ class Loading_UI(object):
             self.create.setVisible(False)
             self.exit.setVisible(False)
             config['settings']['last_opened_location']=file_name[0]
-            config.write(open('settings.ini','w'))
+            config.write(open(os.path.join('INSLPCModel','settings.ini'),'w'))
             
             
             self.app.database_path = file_name[0]
@@ -221,7 +221,19 @@ class View_Item_Ui_Form(object):
         if self.model.fields[field].on_delete != None:
             self.model.fields[field].on_delete(data = item_data)
         
-
+    def add_customlist_item(self,list_name, item, ui_list, sub_ui = None):
+        config = configparser.ConfigParser()
+        config.read( os.path.join('INSLPCModel','settings.ini'))
+        customlist = json.loads(config['CustomLists'][list_name])
+        customlist.append(item)
+        customlist = list(set(customlist))
+        config['CustomLists'][list_name] = json.dumps(customlist)
+        config.write(open(os.path.join('INSLPCModel','settings.ini'),'w'))
+        ui_list.insertItem(0,item)
+        ui_list.setCurrentIndex(0)
+        
+        if sub_ui != None:
+            sub_ui.close()
 
     def add_item(self,  model, Form, is_subitem, data_receiver, main_field):
         
@@ -342,6 +354,8 @@ class View_Item_Ui_Form(object):
 
         self.gridLayout = QtWidgets.QGridLayout()
         self.gridLayout.setObjectName(u"gridLayout")
+        config = configparser.ConfigParser()
+        config.read( os.path.join('INSLPCModel','settings.ini'))
         position_index = 0
         fields_list = []
         current_field_index = 0
@@ -379,6 +393,58 @@ class View_Item_Ui_Form(object):
                         ui_field.setCurrentIndex( ui_field.findText(current_item_text ))
 
                 self.gridLayout.addWidget(ui_field, position_index, 1, 1, 1)
+
+
+            if self.fields[field].field_type == 'CustomListField':
+                
+                
+                setattr(self, field+'LayoutWidget', QWidget(Form) )
+                horizontalLayoutWidget = getattr(self, field+'LayoutWidget')
+
+                horizontalLayoutWidget = QWidget(Form)
+                horizontalLayoutWidget.setObjectName(field+"horizontalLayoutWidget")
+
+                setattr(self, field+'Layout', QHBoxLayout(horizontalLayoutWidget) )
+                horizontalLayout = getattr(self, field+'Layout')
+                horizontalLayout.setObjectName(field+"horizontalLayout")
+                horizontalLayout.setContentsMargins(0, 0, 0, 0)
+
+                setattr(self, field+'comboBox', QComboBox(horizontalLayoutWidget))
+                comboBox = getattr(self, field+'comboBox')
+                comboBox.setObjectName(field+"comboBox")
+
+                
+                if self.fields[field].list_name not in config['CustomLists']:
+                    config['CustomLists'][ self.fields[field].list_name  ] = '[]'
+                    config.write(open(os.path.join('INSLPCModel','settings.ini'),'w'))
+                
+                list_items = json.loads(config['CustomLists'][ self.fields[field].list_name  ])
+                for it in list_items:
+                    comboBox.addItem(it)
+
+                if edit_mode:# set current item
+                    current_item_text = getattr(item_obj,field)
+
+                    if ui_field.findText( current_item_text )>-1:
+                        ui_field.setCurrentIndex( ui_field.findText(current_item_text ))
+
+                    else:
+                        self.add_customlist_item( self.fields[field].list_name  , current_item_text, ui_field)
+
+                horizontalLayout.addWidget(comboBox)
+
+                setattr(self, field+'add_btn', QPushButton(horizontalLayoutWidget))
+                pushButton = getattr(self, field+'add_btn')
+                pushButton.setObjectName( field+"add_btn")
+                pushButton.setMinimumSize(QSize(25, 25))
+                pushButton.setMaximumSize(QSize(25, 25))
+                getattr(self, field+'add_btn').clicked.connect(partial(add_costomlist_item_Window, self, self.add_customlist_item, self.fields[field].list_name, comboBox))
+                horizontalLayout.addWidget(pushButton)
+                self.gridLayout.addWidget(horizontalLayoutWidget, position_index, 1, 1, 1)
+
+
+
+
 
             elif self.fields[field].field_type == 'DictField':
 
@@ -577,3 +643,48 @@ def edit_item_window(item):
     app.UI.subwindow.setAttribute(QtCore.Qt.WA_DeleteOnClose)
     app.UI.subwindow.show()
 
+
+
+
+
+##############################################################################
+##############################################################################
+##############################################################################
+
+
+
+
+class add_costomlist_item_Form(object):
+    def setupUi(self, Form, data_receiver, list_name, ui_list):
+        Form.setObjectName("Form")
+        Form.resize(318, 159)
+        self.gridLayout = QtWidgets.QGridLayout(Form)
+        self.gridLayout.setObjectName("gridLayout")
+        self.item = QtWidgets.QLineEdit(Form)
+        self.item.setObjectName("item")
+        self.gridLayout.addWidget(self.item, 0, 0, 1, 1)
+        self.add_btn = QtWidgets.QPushButton(Form)
+        self.add_btn.setMaximumSize(QtCore.QSize(200, 16777215))
+        self.add_btn.setObjectName("add_btn")
+        self.add_btn.clicked.connect(lambda: data_receiver(list_name, self.item.text(), ui_list, Form))
+        self.gridLayout.addWidget(self.add_btn, 1, 0, 1, 1, QtCore.Qt.AlignHCenter)
+
+        self.retranslateUi(Form)
+        QtCore.QMetaObject.connectSlotsByName(Form)
+
+    def retranslateUi(self, Form):
+        _translate = QtCore.QCoreApplication.translate
+        Form.setWindowTitle(_translate("Form", "Form"))
+        self.add_btn.setText(_translate("Form", "ADD"))
+
+
+def add_costomlist_item_Window(main_ui, data_receiver, list_name, ui_list):
+    
+    main_ui.subwindow = QtWidgets.QDialog()
+
+    ui = add_costomlist_item_Form()
+    ui.setupUi(main_ui.subwindow, data_receiver, list_name, ui_list)
+
+    main_ui.subwindow.setWindowModality(QtCore.Qt.ApplicationModal)
+    main_ui.subwindow.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+    main_ui.subwindow.show()

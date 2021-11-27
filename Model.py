@@ -10,12 +10,15 @@ from .preferences import *
 
 
 def replace_variable_value(item, text):
-    re_text = eval(text)
-    if type(re_text) in [list, tuple, set]:
-        re_text = list(re_text)
-        re_text = [ str(i) for i in  re_text ]
-        re_text = ''.join(list(re_text))
+    if text != '':
+        re_text = eval(text)
+        if type(re_text) in [list, tuple, set]:
+            re_text = list(re_text)
+            re_text = [ str(i) for i in  re_text ]
+            re_text = ''.join(list(re_text))
 
+    else:
+        re_text = ''
     return re_text
 
 
