@@ -395,7 +395,7 @@ class View_Item_Ui_Form(object):
                 self.gridLayout.addWidget(ui_field, position_index, 1, 1, 1)
 
 
-            if self.fields[field].field_type == 'CustomListField':
+            elif self.fields[field].field_type == 'CustomListField':
                 
                 
                 setattr(self, field+'LayoutWidget', QWidget(Form) )
