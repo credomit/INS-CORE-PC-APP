@@ -410,8 +410,8 @@ class View_Item_Ui_Form(object):
                 horizontalLayout.setContentsMargins(0, 0, 0, 0)
 
                 setattr(self, field+'comboBox', QComboBox(horizontalLayoutWidget))
-                comboBox = getattr(self, field+'comboBox')
-                comboBox.setObjectName(field+"comboBox")
+                comboBox = getattr(self, field)
+                comboBox.setObjectName(field)
 
                 
                 if self.fields[field].list_name not in config['CustomLists']:
