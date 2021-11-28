@@ -185,8 +185,13 @@ class Model(object):
         self.ui_list.clear()
         if text != '':
             if text[0] =='#':
-                if text in self.filters.keys():
-                    filtered_objects = self.filters[text](self, self.objects)
+                if text.split(':')[0] in self.filters.keys():
+
+                    if ':' in text : # have values
+                        value = ':'.join(text.split(':')[1:])
+                        filtered_objects = self.filters[text.split(':')[0]](self, self.objects, value = value)
+                    
+                    filtered_objects = self.filters[text.split(':')[0]](self, self.objects)
 
                     for item_object in filtered_objects:
                         self.add_item_to_list( item_object)
