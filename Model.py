@@ -148,6 +148,7 @@ class Model(object):
     on_edit             = None
     on_delete           = None
     search_bar          = None
+    ui_list_info        = None
     filters             = None
 
     def __init__(self, INSApp):
@@ -173,10 +174,12 @@ class Model(object):
 
         if self.search_bar != None:
             self.search_bar.textChanged.connect(self.search)
-            
             fields_filters_text = [ f'@{f}:' for f in self.fields.keys() ]
             filters_compliter =  QCompleter(list(self.filters.keys()) + fields_filters_text )
             self.search_bar.setCompleter(filters_compliter)
+        
+        if self.ui_list_info != None:
+            self.ui_list_info.setText(f'{len(self.objects)} item')
 
 
         
@@ -269,12 +272,12 @@ class Model(object):
 
             for item_object in filtered_objects:
                 self.add_item_to_list(item_object)
-            self.ui_list_info.setText(f'{len(filtered_objects)} item found')
+            self.ui_list_info.setText(f'{len(filtered_objects)}/{len(self.objects)} item found')
             
         else:
             for item_object in self.objects:
                 self.add_item_to_list(item_object)
-            self.ui_list_info.setText(f'{len(filtered_objects)} item')
+            self.ui_list_info.setText(f'{len(self.objects)} item')
 
         
 
