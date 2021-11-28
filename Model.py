@@ -204,7 +204,10 @@ class Model(object):
                     field           = text[1:].split(':')[0]
                     field_value    = ':'.join(text[1:].split(':')[1:])
                     
-                    filtered_objects = self.filter(dict_fields = {field : field_value})
+                    for obj in self.objects:
+                        if field_value in str(getattr(obj, field)):
+                            filtered_objects.append(obj)
+                    
 
                 except:
                     pass
