@@ -184,6 +184,7 @@ class Model(object):
 
     def search(self, text):
         self.ui_list.clear()
+        filtered_objects = []
         if text != '':
 
 
@@ -195,8 +196,7 @@ class Model(object):
                         filtered_objects = self.filters[text.split(':')[0]](self, self.objects, value = value)
                     else:
                         filtered_objects = self.filters[text.split(':')[0]](self, self.objects)
-                    for item_object in filtered_objects:
-                        self.add_item_to_list( item_object)
+
 
 
             elif text[0] =='@':#fields filters
@@ -205,8 +205,6 @@ class Model(object):
                     field_value    = text[1:].split(':')[1:]
                     filtered_objects = self.filter(dict_fields = {field : field_value})
 
-                    for item_object in filtered_objects:
-                        self.add_item_to_list( item_object)
                 except:
                     pass
 
@@ -252,7 +250,7 @@ class Model(object):
                     
                     obj_words = set(' '.join(obj_data).split(' ')) #convert all data to words set
                     if text_words.issubset(obj_words):
-                        self.add_item_to_list(item_object)
+                        filtered_objects.append(item_object)
                     
                     else:
                         ex_status = True
@@ -262,11 +260,17 @@ class Model(object):
                                 ex_status = False
 
                         if ex_status:
-                            self.add_item_to_list(item_object)
+                            filtered_objects.append(item_object)
+
+
+            for item_object in filtered_objects:
+                self.add_item_to_list(item_object)
+            self.ui_list_info.setText(f'{len(filtered_objects)} item found')
             
         else:
             for item_object in self.objects:
                 self.add_item_to_list(item_object)
+            self.ui_list_info.setText(f'{len(filtered_objects)} item')
 
         
 
