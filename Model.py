@@ -202,7 +202,8 @@ class Model(object):
             elif text[0] =='@':#fields filters
                 try:
                     field           = text[1:].split(':')[0]
-                    field_value    = text[1:].split(':')[1:]
+                    field_value    = ':'.join(text[1:].split(':')[1:])
+                    
                     filtered_objects = self.filter(dict_fields = {field : field_value})
 
                 except:
