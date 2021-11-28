@@ -177,7 +177,7 @@ class Model(object):
             filters_compliter =  QCompleter(list(self.filters.keys()))
             self.search_bar.setCompleter(filters_compliter)
 
-            
+
         
 
 
@@ -186,10 +186,10 @@ class Model(object):
         if text != '':
             if text[0] =='#':
                 if text in self.filters.keys():
-                    filtered_objects = self.filters[text](self.objects)
+                    filtered_objects = self.filters[text](self, self.objects)
 
                     for item_object in filtered_objects:
-                        self.add_item_to_list(item_object)
+                        self.add_item_to_list( item_object)
                 
                 
             else:
