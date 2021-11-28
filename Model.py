@@ -174,7 +174,8 @@ class Model(object):
         if self.search_bar != None:
             self.search_bar.textChanged.connect(self.search)
             
-            filters_compliter =  QCompleter(list(self.filters.keys()))
+            fields_filters_text = [ f'@{f}:' for f in self.fields.keys() ]
+            filters_compliter =  QCompleter(list(self.filters.keys()) + fields_filters_text )
             self.search_bar.setCompleter(filters_compliter)
 
 
@@ -184,18 +185,31 @@ class Model(object):
     def search(self, text):
         self.ui_list.clear()
         if text != '':
-            if text[0] =='#':
+
+
+            if text[0] =='#':#custom filters
                 if text.split(':')[0] in self.filters.keys():
 
                     if ':' in text : # have values
                         value = ':'.join(text.split(':')[1:])
                         filtered_objects = self.filters[text.split(':')[0]](self, self.objects, value = value)
-                    
-                    filtered_objects = self.filters[text.split(':')[0]](self, self.objects)
+                    else:
+                        filtered_objects = self.filters[text.split(':')[0]](self, self.objects)
+                    for item_object in filtered_objects:
+                        self.add_item_to_list( item_object)
+
+
+            elif text[0] =='@':#fields filters
+                try:
+                    field           = text[1:].split(':')[0]
+                    field_value    = text[1:].split(':')[1:]
+                    filtered_objects = self.filter(dict_fields = {field : field_value})
 
                     for item_object in filtered_objects:
                         self.add_item_to_list( item_object)
-                
+                except:
+                    pass
+
                 
             else:
                 text_words = set(text.split(' '))
