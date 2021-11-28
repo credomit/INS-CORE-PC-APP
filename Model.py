@@ -148,6 +148,7 @@ class Model(object):
     on_edit             = None
     on_delete           = None
     search_bar          = None
+    filters             = None
 
     def __init__(self, INSApp):
         
@@ -172,6 +173,9 @@ class Model(object):
 
         if self.search_bar != None:
             self.search_bar.textChanged.connect(self.search)
+            
+            filters_compliter =  QCompleter(list(self.filters.keys()))
+            self.search_bar.setCompleter(filters_compliter)
 
             
         
@@ -179,59 +183,68 @@ class Model(object):
 
     def search(self, text):
         self.ui_list.clear()
-        if text !='':
-            text_words = set(text.split(' '))
-            if '' in text_words:
-                text_words.remove('')
+        if text != '':
+            if text[0] =='#':
+                if text in self.filters.keys():
+                    filtered_objects = self.filters[text](self.objects)
 
-            for item_object in self.objects:
-                obj_data = list(vars(item_object).values())
-                for i in range(len(obj_data)):
-                    if type(obj_data[i]) == dict:
-                        obj_data[i] = ''
-                        obj_data += [ str(b) for b in list(obj_data[i].values())]
-
-                    elif type(obj_data[i]) in [list, set, tuple]:
-                        if len(obj_data[i])>0:
-                            if type(obj_data[i][0]) == dict:
-                                for item in obj_data[i]:
-                                    obj_data[i] = ''
-                                    obj_data += [ str(b) for b in list(item.values())]
-
-                        else:
-                            obj_data += [ str(b) for b in list(obj_data[i])]
-                                
-                            obj_data[i] = ''
-
-                    elif type(obj_data[i]) == str:
-                        try:
-                            bit = json.loads(obj_data[i])
-                            if type(bit) == dict:
-                                obj_data += list(bit.values())
-                            else:
-                                obj_data += list(bit)
-                            obj_data[i] = ''
-                        except:
-                            pass
-                    else:
-                        obj_data[i] = str(obj_data[i])
-
-
-                
-                obj_words = set(' '.join(obj_data).split(' ')) #convert all data to words set
-                if text_words.issubset(obj_words):
-                    self.add_item_to_list(item_object)
-                
-                else:
-                    ex_status = True
-                    for word in text_words:
-                        obj_words_str = [ str(i) for i in obj_words if type(i) in [float,bool,str,int,list, tuple, dict, set] ]
-                        if word not in ' '.join(obj_words_str):
-                            ex_status = False
-
-                    if ex_status:
+                    for item_object in filtered_objects:
                         self.add_item_to_list(item_object)
-        
+                
+                
+            else:
+                text_words = set(text.split(' '))
+                if '' in text_words:
+                    text_words.remove('')
+
+                for item_object in self.objects:
+                    obj_data = list(vars(item_object).values())
+                    for i in range(len(obj_data)):
+                        if type(obj_data[i]) == dict:
+                            obj_data[i] = ''
+                            obj_data += [ str(b) for b in list(obj_data[i].values())]
+
+                        elif type(obj_data[i]) in [list, set, tuple]:
+                            if len(obj_data[i])>0:
+                                if type(obj_data[i][0]) == dict:
+                                    for item in obj_data[i]:
+                                        obj_data[i] = ''
+                                        obj_data += [ str(b) for b in list(item.values())]
+
+                            else:
+                                obj_data += [ str(b) for b in list(obj_data[i])]
+                                    
+                                obj_data[i] = ''
+
+                        elif type(obj_data[i]) == str:
+                            try:
+                                bit = json.loads(obj_data[i])
+                                if type(bit) == dict:
+                                    obj_data += list(bit.values())
+                                else:
+                                    obj_data += list(bit)
+                                obj_data[i] = ''
+                            except:
+                                pass
+                        else:
+                            obj_data[i] = str(obj_data[i])
+
+
+                    
+                    obj_words = set(' '.join(obj_data).split(' ')) #convert all data to words set
+                    if text_words.issubset(obj_words):
+                        self.add_item_to_list(item_object)
+                    
+                    else:
+                        ex_status = True
+                        for word in text_words:
+                            obj_words_str = [ str(i) for i in obj_words if type(i) in [float,bool,str,int,list, tuple, dict, set] ]
+                            if word not in ' '.join(obj_words_str):
+                                ex_status = False
+
+                        if ex_status:
+                            self.add_item_to_list(item_object)
+            
         else:
             for item_object in self.objects:
                 self.add_item_to_list(item_object)
