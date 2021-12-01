@@ -136,6 +136,7 @@ class Fields(object):
         on_add                  = None
         on_delete               = None
         properties              = []
+        tooltip                 = '""'
 
     
         

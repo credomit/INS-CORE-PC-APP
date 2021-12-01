@@ -140,6 +140,11 @@ class Item(object):
         self.ui_obj.setText(self.__str__())
         if self.model.on_edit != None and call_on_edit:
             self.model.on_edit(old_data = old_data, new_data = new_data )
+
+        #update dashboard
+        for mode in self.model.GRAPH_MODES:
+            if getattr(self.model , "dashboard_frame_items_"+mode).currentData() == self:
+                self.model.View_Graph(mode)
         
 
 
@@ -217,8 +222,8 @@ class Model(object):
 
                 
 
-                setattr(self, "dashboard_frame_graph_"+str(i),pg.GraphicsWindow())
-                graph = getattr(self, "dashboard_frame_graph_"+str(i))
+                setattr(self, "dashboard_frame_graph_"+mode,pg.GraphicsWindow())
+                graph = getattr(self, "dashboard_frame_graph_"+mode)
 
                 
 
@@ -228,15 +233,15 @@ class Model(object):
 
                 dashboard_frame_gridLayout.addWidget(graph, 1, 0, 2, 1)
 
-                setattr(self, "dashboard_frame_items_"+str(i), QComboBox(frame))
-                items_combo = getattr(self, "dashboard_frame_items_"+str(i))
+                setattr(self, "dashboard_frame_items_"+mode, QComboBox(frame))
+                items_combo = getattr(self, "dashboard_frame_items_"+mode)
                 items_combo.setObjectName(u"comboBox")
                 items_combo.setMaximumSize(QSize(175, 16777215))
                 for item in self.objects: 
                     items_combo.addItem(str(item), item)
 
-                self.View_Graph(mode, graph, items_combo)
-                items_combo.currentIndexChanged.connect(partial(  self.View_Graph, mode, graph, items_combo ))
+                self.View_Graph(mode)
+                items_combo.currentIndexChanged.connect(partial(  self.View_Graph, mode ))
 
                 dashboard_frame_gridLayout.addWidget(items_combo, 1, 1, 1, 1)
 
@@ -255,8 +260,6 @@ class Model(object):
                 label.setText(mode.title())
 
                 dashboard_frame_gridLayout.addWidget(label, 0, 0, 1, 2)
-                
-
                 self.dashboardGridLayout.addWidget(frame , i, 0, 1, 1)
 
                 i+=1
@@ -266,7 +269,10 @@ class Model(object):
 
 
 
-    def View_Graph(self, mode, graph, items_combo):
+    def View_Graph(self, mode):
+
+        graph = getattr(self, "dashboard_frame_graph_"+mode)
+        items_combo = getattr(self, "dashboard_frame_items_"+mode)
         graph_data = self.GRAPH_MODES[mode](items_combo.currentData())
         x = graph_data['x'] 
         y = graph_data['y']
