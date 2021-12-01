@@ -2,7 +2,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-
+from .fields import Fields
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys, os, configparser, json
 from functools import partial
@@ -298,12 +298,12 @@ class View_Item_Ui_Form(object):
 
 
     def cancel_op(self):
-        ansower = QtWidgets.QMessageBox.question(self.Form , self.model.INSApp.translate('Cancel Confirm') , self.model.INSApp.translate('are you sure you want to exit?')+'\n'+self.model.INSApp.translate('your changes will not be saves'))
+        ansower = QtWidgets.QMessageBox.question(self.Form , self.translate('Cancel Confirm') , self.translate('are you sure you want to exit?')+'\n'+self.translate('your changes will not be saves'))
         if ansower==QtWidgets.QMessageBox.Yes:
             self.Form.close()
 
 
-    def setupUi(self, Form, model, fields, data_receiver = None , main_field = None, item_obj = None , is_subitem = False, edit_mode = False, pui = None):
+    def setupUi(self, Form, model, fields, title = '' , app = None , data_receiver = None , main_field = None, item_obj = None , is_subitem = False, edit_mode = False, pui = None, obj_mode = True):
         self.model      = model
         self.fields     = fields
         self.Form       = Form
@@ -313,19 +313,33 @@ class View_Item_Ui_Form(object):
         self.edit_mode  = edit_mode
         self.pui        = pui
 
-        if not edit_mode:
+        if obj_mode:
+            self.translate = model.INSApp.translate
+
+        else:
+            self.translate = app.translate
+            
+
+        if not edit_mode and obj_mode:
             self.item_obj = model.temporary_item()
 
         Form.setObjectName("Form")
         Form.resize(400, 300)
-        Form.setWindowTitle(model.INSApp.translate('add '+model.__class__.__name__.replace('_',' ').title() ))
-        Form.setStyleSheet(model.INSApp.qss_style)
+        if obj_mode:
+            Form.setWindowTitle(self.translate('add '+model.__class__.__name__.replace('_',' ').title() ))
+            Form.setStyleSheet(model.INSApp.qss_style)
+
+        else:
+            Form.setWindowTitle(app.translate(title))
+            Form.setStyleSheet(app.qss_style)
+        
+        
         self.gridLayout_2 = QtWidgets.QGridLayout(Form)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
         if edit_mode:
             self.edit_btn = QtWidgets.QPushButton(Form)
             self.edit_btn.setObjectName(u"edit_btn")
-            self.edit_btn.setToolTip(model.INSApp.translate('edit'))
+            self.edit_btn.setToolTip(self.translate('edit'))
             self.edit_btn.clicked.connect(lambda: self.edit_item(Form, item_obj))
             self.edit_btn.setMinimumSize(QSize(30, 30))
             self.edit_btn.setMaximumSize(QSize(30, 30))
@@ -335,7 +349,7 @@ class View_Item_Ui_Form(object):
         else:
             self.add_btn = QtWidgets.QPushButton(Form)
             self.add_btn.setObjectName(u"add_btn")
-            self.add_btn.setToolTip(model.INSApp.translate('add'))
+            self.add_btn.setToolTip(self.translate('add'))
             self.add_btn.clicked.connect(lambda: self.add_item(model,Form, is_subitem,data_receiver, main_field))
             self.add_btn.setMinimumSize(QSize(30, 30))
             self.add_btn.setMaximumSize(QSize(30, 30))
@@ -345,7 +359,7 @@ class View_Item_Ui_Form(object):
         
         self.cancel_btn = QtWidgets.QPushButton(Form)
         self.cancel_btn.setObjectName(u"cancel_btn")
-        self.cancel_btn.setToolTip(model.INSApp.translate('cancel'))
+        self.cancel_btn.setToolTip(self.translate('cancel'))
         self.cancel_btn.clicked.connect(self.cancel_op)
         self.cancel_btn.setMinimumSize(QSize(30, 30))
         self.cancel_btn.setMaximumSize(QSize(30, 30))
@@ -468,7 +482,7 @@ class View_Item_Ui_Form(object):
                     if ui_field.findText( item_text )>-1:
                         ui_field.setCurrentIndex( ui_field.findText( item_text ) )
 
-                subfields = self.item_obj.model.fields[field].subfields
+                subfields = self.fields[field].subfields
                 for subfield in subfields:
                     dictlist_4_sublist.append({
                                 'subfield_name' : subfield,
@@ -514,14 +528,14 @@ class View_Item_Ui_Form(object):
                 setattr(self, field+'_add_button', QPushButton(gridLayoutWidget))              
                 add_button = vars(self)[field+'_add_button']
                 add_button.setObjectName(field+"add_button")
-                add_button.setToolTip(model.INSApp.translate('add'))
+                add_button.setToolTip(self.translate('add'))
                 add_button.clicked.connect( partial(self.call_add_subitem_window, [self.fields[field].subfields, field,self.fields[field] ]) )
                 gridLayout.addWidget(add_button, 0, 2, 1, 1)
 
                 setattr(self, field+'_remove_button', QPushButton(gridLayoutWidget))
                 remove_button = vars(self)[field+'_remove_button']
                 remove_button.setObjectName(field+"_remove_button")
-                remove_button.setToolTip(model.INSApp.translate('remove'))
+                remove_button.setToolTip(self.translate('remove'))
                 remove_button.clicked.connect( partial(self.remove_subitem, field))
                 gridLayout.addWidget(remove_button, 0, 1, 1, 1)
 
@@ -592,21 +606,22 @@ class View_Item_Ui_Form(object):
             # label
             self.label = QtWidgets.QLabel(Form)
             self.label.setObjectName(field+"label")
-            self.label.setText( self.model.INSApp.translate(field.replace('_',' ').title()))
+            self.label.setText( self.translate(field.replace('_',' ').title()))
             self.gridLayout.addWidget(self.label, position_index, 0, 1, 1)
 
             position_index+=1
 
         for DL_subfield in dictlist_4_sublist:
                 DL_ui_field = vars(self)[DL_subfield['mainfield_name']]
-                DL_items    = self.model.fields[DL_subfield['mainfield_name']].item_dict
+                DL_items    = self.fields[DL_subfield['mainfield_name']].item_dict
                 SF          = vars(self)[DL_subfield['subfield_name']]
-                current_SF  = vars(self.item_obj)[DL_subfield['subfield_name']]
+                
 
                 SF.clear()
                 for i in DL_items[DL_ui_field.currentText()]:
                     SF.addItem(i)
                 if edit_mode:
+                    current_SF  = vars(self.item_obj)[DL_subfield['subfield_name']]
                     if SF.findText( current_SF )>-1:
                         SF.setCurrentIndex( SF.findText( current_SF ) )
                     
@@ -642,7 +657,6 @@ def edit_item_window(item):
     app.UI.subwindow.setWindowModality(QtCore.Qt.ApplicationModal)
     app.UI.subwindow.setAttribute(QtCore.Qt.WA_DeleteOnClose)
     app.UI.subwindow.show()
-
 
 
 
@@ -688,3 +702,6 @@ def add_costomlist_item_Window(main_ui, data_receiver, list_name, ui_list):
     main_ui.subwindow.setWindowModality(QtCore.Qt.ApplicationModal)
     main_ui.subwindow.setAttribute(QtCore.Qt.WA_DeleteOnClose)
     main_ui.subwindow.show()
+
+
+

@@ -7,6 +7,8 @@ from .translator import translator
 import notify2
 from pathlib import Path
 from .preferences import *
+import pyqtgraph as pg
+import sys
 
 
 def replace_variable_value(item, text):
@@ -28,6 +30,8 @@ def replace_variable_value(item, text):
 
 class INSAPP(object):
 
+    
+
     def __init__(self, app_name, translateable_labels_and_buttons,app_file_type, app_logo ,  preferences_call_btn = 'PREFERENCES_ACTION'):
         
         notify2.init(app_name)
@@ -47,10 +51,11 @@ class INSAPP(object):
         self.translator             = translator(self)
         self.translate              = self.translator.translate
         self.preferences_call_btn   = getattr(self.UI, preferences_call_btn)
-
-        
         self.preferences_call_btn.triggered.connect(lambda: open_preferences_window(self))
         
+        
+        
+
 
     def run(self):
         loading_window(self)
@@ -144,12 +149,14 @@ class Model(object):
     view_name           = ' f" {item.model.__class__.__name__} object ({item.id})"'
     tooltip             = ''
     add_conditions      = {}
+    GRAPH_MODES         = []
     on_add              = None
     on_edit             = None
     on_delete           = None
     search_bar          = None
     ui_list_info        = None
     filters             = None
+    dashboard           = None
 
     def __init__(self, INSApp):
         
@@ -181,8 +188,97 @@ class Model(object):
         if self.ui_list_info != None:
             self.ui_list_info.setText(f'{len(self.objects)} item')
 
+        if self.dashboard != None:
+            self.dashboard.setWidgetResizable(True)
+            self.dashboardAreaWidgetContents = QWidget()
+            self.dashboardAreaWidgetContents.setObjectName(self.DBTableName+"dashboardAreaWidgetContents")
+            self.dashboardAreaWidgetContents.setGeometry(QRect(0, 0, 868, 876))
+            self.dashboardGridLayout = QGridLayout(self.dashboardAreaWidgetContents)
+            self.dashboardGridLayout.setObjectName(self.DBTableName+"dashboardGridLayout")
 
-        
+
+
+            pg.setConfigOption('background', 'w')
+            pg.setConfigOption('foreground', 'k')
+            
+
+            i = 0
+            for mode in self.GRAPH_MODES:
+                setattr(self, "dashboard_frame_"+str(i), QFrame(self.dashboardAreaWidgetContents))
+                frame = getattr(self, "dashboard_frame_"+str(i))
+                frame.setObjectName(str(i)+"_dashboard_frame_")
+                frame.setMinimumSize(QSize(0, 282))
+                frame.setFrameShape(QFrame.StyledPanel)
+
+                setattr(self, "dashboard_frame_gridLayout_"+str(i),QGridLayout(frame))
+                dashboard_frame_gridLayout = getattr(self, "dashboard_frame_gridLayout_"+str(i))
+                dashboard_frame_gridLayout.setObjectName("dashboard_frame_gridLayout_"+str(i))
+
+
+                
+
+                setattr(self, "dashboard_frame_graph_"+str(i),pg.GraphicsWindow())
+                graph = getattr(self, "dashboard_frame_graph_"+str(i))
+
+                
+
+                graph.setObjectName(u"frame_"+str(i))
+                graph.setFrameShape(QFrame.StyledPanel)
+                graph.setFrameShadow(QFrame.Raised)
+
+                dashboard_frame_gridLayout.addWidget(graph, 1, 0, 2, 1)
+
+                setattr(self, "dashboard_frame_items_"+str(i), QComboBox(frame))
+                items_combo = getattr(self, "dashboard_frame_items_"+str(i))
+                items_combo.setObjectName(u"comboBox")
+                items_combo.setMaximumSize(QSize(175, 16777215))
+                for item in self.objects: 
+                    items_combo.addItem(str(item), item)
+
+                self.View_Graph(mode, graph, items_combo)
+                items_combo.currentIndexChanged.connect(partial(  self.View_Graph, mode, graph, items_combo ))
+
+                dashboard_frame_gridLayout.addWidget(items_combo, 1, 1, 1, 1)
+
+
+                setattr(self, "dashboard_frame_title_"+str(i), QLabel(frame))
+                label = getattr(self, "dashboard_frame_title_"+str(i))
+                label.setObjectName("label"+str(i))
+                sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+                sizePolicy.setHorizontalStretch(0)
+                sizePolicy.setVerticalStretch(0)
+                sizePolicy.setHeightForWidth(label.sizePolicy().hasHeightForWidth())
+                label.setSizePolicy(sizePolicy)
+                font = QFont()
+                font.setPointSize(18)
+                label.setFont(font)
+                label.setText(mode.title())
+
+                dashboard_frame_gridLayout.addWidget(label, 0, 0, 1, 2)
+                
+
+                self.dashboardGridLayout.addWidget(frame , i, 0, 1, 1)
+
+                i+=1
+
+
+            self.dashboard.setWidget(self.dashboardAreaWidgetContents)
+
+
+
+    def View_Graph(self, mode, graph, items_combo):
+        graph_data = self.GRAPH_MODES[mode](items_combo.currentData())
+        x = graph_data['x'] 
+        y = graph_data['y']
+        xdict = dict(enumerate(x))
+
+        stringaxis = pg.AxisItem(orientation='bottom')
+        stringaxis.setTicks([xdict.items()])
+        graph.clear()
+        plot = graph.addPlot(axisItems={'bottom': stringaxis})
+               
+        plot.plot(list(xdict.keys()),y,  symbol ='o', symbolPen ='g',
+                    symbolBrush = 5.2, name ='green', width = 1,  pen=pg.mkPen('g', width=2.5))
 
 
     def search(self, text):
