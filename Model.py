@@ -8,8 +8,11 @@ import notify2
 from pathlib import Path
 from .preferences import *
 import pyqtgraph as pg
-import sys
+import sys, random
 
+from pyqtgraph import QtCore as QtCoregraph
+from pyqtgraph import QtGui as QtGuigraph
+import pyautogui
 
 def replace_variable_value(item, text):
     if text != '':
@@ -204,34 +207,27 @@ class Model(object):
 
 
             pg.setConfigOption('background', 'w')
-            pg.setConfigOption('foreground', 'k')
+            pg.setConfigOption('foreground', QColor(20,20,20))
             
 
             i = 0
             for mode in self.GRAPH_MODES:
-                setattr(self, "dashboard_frame_"+str(i), QFrame(self.dashboardAreaWidgetContents))
-                frame = getattr(self, "dashboard_frame_"+str(i))
-                frame.setObjectName(str(i)+"_dashboard_frame_")
+                setattr(self, "dashboard_frame_"+mode, QFrame(self.dashboardAreaWidgetContents))
+                frame = getattr(self, "dashboard_frame_"+mode)
+                frame.setObjectName(mode+"_dashboard_frame_")
                 frame.setMinimumSize(QSize(0, 282))
                 frame.setFrameShape(QFrame.StyledPanel)
 
-                setattr(self, "dashboard_frame_gridLayout_"+str(i),QGridLayout(frame))
-                dashboard_frame_gridLayout = getattr(self, "dashboard_frame_gridLayout_"+str(i))
-                dashboard_frame_gridLayout.setObjectName("dashboard_frame_gridLayout_"+str(i))
-
-
-                
+                setattr(self, "dashboard_frame_gridLayout_"+mode,QGridLayout(frame))
+                dashboard_frame_gridLayout = getattr(self, "dashboard_frame_gridLayout_"+mode)
+                dashboard_frame_gridLayout.setObjectName("dashboard_frame_gridLayout_"+mode)
 
                 setattr(self, "dashboard_frame_graph_"+mode,pg.GraphicsWindow())
                 graph = getattr(self, "dashboard_frame_graph_"+mode)
-
-                
-
-                graph.setObjectName(u"frame_"+str(i))
+                graph.setObjectName(u"frame_"+mode)
                 graph.setFrameShape(QFrame.StyledPanel)
                 graph.setFrameShadow(QFrame.Raised)
-
-                dashboard_frame_gridLayout.addWidget(graph, 1, 0, 2, 1)
+                dashboard_frame_gridLayout.addWidget(graph, 2, 0, 1, 2)
 
                 setattr(self, "dashboard_frame_items_"+mode, QComboBox(frame))
                 items_combo = getattr(self, "dashboard_frame_items_"+mode)
@@ -240,15 +236,21 @@ class Model(object):
                 for item in self.objects: 
                     items_combo.addItem(str(item), item)
 
+                setattr(self, "dashboard_frame_info_"+mode, QLabel(frame))
+                info = getattr(self, "dashboard_frame_info_"+mode)
+                info.setObjectName("label_info_"+mode)
+                info.setText(mode.title())
+                dashboard_frame_gridLayout.addWidget(info, 1, 1, 1, 2)
+
                 self.View_Graph(mode)
                 items_combo.currentIndexChanged.connect(partial(  self.View_Graph, mode ))
 
-                dashboard_frame_gridLayout.addWidget(items_combo, 1, 1, 1, 1)
+                dashboard_frame_gridLayout.addWidget(items_combo, 1, 0, 1, 1)
 
 
-                setattr(self, "dashboard_frame_title_"+str(i), QLabel(frame))
-                label = getattr(self, "dashboard_frame_title_"+str(i))
-                label.setObjectName("label"+str(i))
+                setattr(self, "dashboard_frame_title_"+mode, QLabel(frame))
+                label = getattr(self, "dashboard_frame_title_"+mode)
+                label.setObjectName("label_title_"+mode)
                 sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
                 sizePolicy.setHorizontalStretch(0)
                 sizePolicy.setVerticalStretch(0)
@@ -268,6 +270,31 @@ class Model(object):
             self.dashboard.setWidget(self.dashboardAreaWidgetContents)
 
 
+    def hovered(self, item, current_item):
+        try:
+            current_x = current_item.pos().x()
+            if current_x < int(current_x)+0.5: # get nearest point x
+                current_x = int(current_x)
+            
+            else:
+                current_x = int(current_x)+1
+
+
+            current_x       = list(item.xData).index(current_x)
+            current_x_view  = item.main_plot.stringaxis[current_x]
+            current_y       = list(item.yData)[current_x]
+            info_label      = getattr(self, "dashboard_frame_info_"+item.mode)
+            info_label.setText(str(current_x_view)+ '   |   ' + str(current_y))
+        except:
+            self.leaveHovered( item)
+        
+        
+        
+
+    def leaveHovered(self, item):
+        info_label = getattr(self, "dashboard_frame_info_"+item.mode)
+        info_label.setText('')
+
 
     def View_Graph(self, mode):
 
@@ -282,9 +309,21 @@ class Model(object):
         stringaxis.setTicks([xdict.items()])
         graph.clear()
         plot = graph.addPlot(axisItems={'bottom': stringaxis})
-               
+        plot.showGrid(x = True, y = True, alpha = 0.2)
+        plot.stringaxis  = list(xdict.values())
+        
+
+        plotitem = HoverableCurveItem(x, y, pen=pg.mkPen('w', width=10))
+        plotitem.setClickable(True, width=10)
+        plotitem.sigCurveHovered.connect(self.hovered)
+        plotitem.sigCurveNotHovered.connect(self.leaveHovered)
+        
+        plotitem.mode = mode
+        plotitem.main_plot = plot
+
+        plot.addItem(plotitem)
         plot.plot(list(xdict.keys()),y,  symbol ='o', symbolPen ='g',
-                    symbolBrush = 5.2, name ='green', width = 1,  pen=pg.mkPen('g', width=2.5))
+                    symbolBrush = 1.2, name ='green', width = 1,  pen=pg.mkPen('g', width=2.5))
 
 
     def search(self, text):
@@ -563,3 +602,18 @@ class Model(object):
         
                 
 
+class HoverableCurveItem(pg.PlotCurveItem):
+    sigCurveHovered = QtCoregraph.Signal(object, object)
+    sigCurveNotHovered = QtCoregraph.Signal(object, object)
+
+    def __init__(self, hoverable=True, *args, **kwargs):
+        super(HoverableCurveItem, self).__init__(*args, **kwargs)
+        self.hoverable = hoverable
+        self.setAcceptHoverEvents(True)
+
+    def hoverEvent(self, ev):
+        if self.hoverable:
+            if self.mouseShape().contains(ev.pos()):
+                self.sigCurveHovered.emit(self, ev)
+            else:
+                self.sigCurveNotHovered.emit(self, ev)
