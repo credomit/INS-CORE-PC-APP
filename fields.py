@@ -134,6 +134,7 @@ class Fields(object):
         data_base_type          = 'BLOB'
         default                 =  []
         on_add                  = None
+        on_edit                 = None
         on_delete               = None
         properties              = []
         tooltip                 = '""'

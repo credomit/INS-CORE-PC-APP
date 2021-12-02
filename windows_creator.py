@@ -220,6 +220,62 @@ class View_Item_Ui_Form(object):
 
         if self.model.fields[field].on_delete != None:
             self.model.fields[field].on_delete(data = item_data)
+
+
+    def edit_subitem(self, form):
+        
+
+        data = {}
+        for field in form.fields.keys():
+
+            if form.fields[field].field_type == 'OneToOneField':
+                data[field] = vars(form)[field].currentData()
+
+            elif form.fields[field].field_type == 'ManyToManyField':
+                dict_data = getattr(form, field+'_data')
+                data[field] =  dict_data
+
+            elif form.fields[field].field_type == 'DateField':
+                data[field] = vars(form)[field].date().toString()
+                
+
+            else:
+                data[field] = getattr(vars(form)[field] , form.fields[field].Get_UI_Value_Function  )()
+
+        old_data =  getattr(self, form.main_field+'_data')
+        
+        old_data.remove(form.dict_data)
+        old_data.append(data)
+        setattr(self, form.main_field+'_data', old_data)
+        
+        ui_item =  getattr(self, form.main_field+'_listWidget').currentItem()
+        ui_item.setData(6,data)
+
+        view_name = self.fields[form.main_field].view_name
+
+        view_name = replace_variable_value(view_name, data = data)
+        if type(view_name) not in [str, int]:
+            view_name = ''.join([ str(i) for i in view_name])
+        ui_item.setText(view_name)
+
+        if self.fields[form.main_field].on_edit != None:
+            self.fields[form.main_field].on_edit(old_data = form.dict_data, edited_data =data )
+
+
+        form.Form.close()
+
+        
+
+    def call_edit_subitem_window(self, ui_list, field):
+        print(ui_list.currentItem().data(6), type(ui_list.currentItem().data(6)))
+        self.subwindow = QtWidgets.QDialog()
+
+        ui = View_Item_Ui_Form()
+        ui.setupUi(self.subwindow ,  self.model, self.fields[field].subfields, title = field , app = self.model.INSApp , data_receiver = self.edit_subitem , main_field = field,is_subitem = True, edit_mode = True, pui = self, obj_mode = False, dict_data = ui_list.currentItem().data(6))
+        self.subwindow.setWindowModality(QtCore.Qt.ApplicationModal)
+        self.subwindow.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.subwindow.show()
+
         
     def add_customlist_item(self,list_name, item, ui_list, sub_ui = None):
         config = configparser.ConfigParser()
@@ -277,7 +333,6 @@ class View_Item_Ui_Form(object):
                 
 
             else:
-                print(item.model.fields[field].Get_UI_Value_Function)
                 setattr( item, field, getattr(vars(self)[field] , item.model.fields[field].Get_UI_Value_Function  )())
 
         item.save(call_on_edit = True)
@@ -303,7 +358,7 @@ class View_Item_Ui_Form(object):
             self.Form.close()
 
 
-    def setupUi(self, Form, model, fields, title = '' , app = None , data_receiver = None , main_field = None, item_obj = None , is_subitem = False, edit_mode = False, pui = None, obj_mode = True):
+    def setupUi(self, Form, model, fields, title = '' , app = None , data_receiver = None , main_field = None, item_obj = None , is_subitem = False, edit_mode = False, pui = None, obj_mode = True, dict_data = None):
         self.model      = model
         self.fields     = fields
         self.Form       = Form
@@ -312,6 +367,7 @@ class View_Item_Ui_Form(object):
         self.is_subitem = is_subitem
         self.edit_mode  = edit_mode
         self.pui        = pui
+        self.dict_data  = dict_data
 
         if obj_mode:
             self.translate = model.INSApp.translate
@@ -340,9 +396,13 @@ class View_Item_Ui_Form(object):
             self.edit_btn = QtWidgets.QPushButton(Form)
             self.edit_btn.setObjectName(u"edit_btn")
             self.edit_btn.setToolTip(self.translate('edit'))
-            self.edit_btn.clicked.connect(lambda: self.edit_item(Form, item_obj))
             self.edit_btn.setMinimumSize(QSize(30, 30))
             self.edit_btn.setMaximumSize(QSize(30, 30))
+            if obj_mode:
+                self.edit_btn.clicked.connect(lambda: self.edit_item(Form, item_obj))
+            
+            else:
+                self.edit_btn.clicked.connect(lambda: data_receiver(self))
 
             self.gridLayout_2.addWidget(self.edit_btn, 1, 2, 1, 1)
 
@@ -401,7 +461,11 @@ class View_Item_Ui_Form(object):
                         ui_field.addItem(item)
 
                 if edit_mode:# set current item
-                    current_item_text = getattr(item_obj,field)
+                    if obj_mode:
+                        current_item_text = getattr(item_obj,field)
+
+                    else:
+                        current_item_text = dict_data[field]
 
                     if ui_field.findText( current_item_text )>-1:
                         ui_field.setCurrentIndex( ui_field.findText(current_item_text ))
@@ -437,7 +501,10 @@ class View_Item_Ui_Form(object):
                     comboBox.addItem(it)
 
                 if edit_mode:# set current item
-                    current_item_text = getattr(item_obj,field)
+                    if obj_mode:
+                        current_item_text = getattr(item_obj,field)
+                    else:
+                        current_item_text = dict_data[field]
 
                     if ui_field.findText( current_item_text )>-1:
                         ui_field.setCurrentIndex( ui_field.findText(current_item_text ))
@@ -470,8 +537,12 @@ class View_Item_Ui_Form(object):
                     ui_field.addItem(str(item))
 
                 if edit_mode:# select current item
-                    item_text = getattr(item_obj, field)
+                    if obj_mode:
+                        item_text = getattr(item_obj, field)
                     
+                    else:
+                        item_text = dict_data[field]
+
                     if type(item_text) == str:
                         item_text = item_text
 
@@ -506,7 +577,11 @@ class View_Item_Ui_Form(object):
                     ui_field.addItem(str(obj), obj.id)
 
                 if edit_mode:# set current item
-                    current_item_text = getattr(model.INSApp, self.fields[field].model).get(id = getattr(item_obj, field))
+                    if obj_mode:
+                        current_item_text = getattr(model.INSApp, self.fields[field].model).get(id = getattr(item_obj, field))
+
+                    else:
+                        current_item_text = dict_data[field]
 
                     if ui_field.findText( str(current_item_text) )>-1:
                         ui_field.setCurrentIndex( ui_field.findText(str(current_item_text)))
@@ -542,11 +617,17 @@ class View_Item_Ui_Form(object):
                 setattr(self, field+'_listWidget', QListWidget(gridLayoutWidget))
                 listWidget = vars(self)[field+'_listWidget']
                 listWidget.setObjectName(field+'_listWidget')
+                listWidget.itemDoubleClicked.connect(partial(self.call_edit_subitem_window, listWidget, field ))
+
                 gridLayout.addWidget(listWidget, 1, 0, 1, 3)
 
 
                 if edit_mode:
-                    fields_data = getattr(self.item_obj, field)
+                    if obj_mode:
+                        fields_data = getattr(self.item_obj, field)
+                    else:
+                        fields_data = dict_data[field]
+
                     if type(fields_data) == str:
                         setattr(self, field+'_data', json.loads(fields_data.replace("'",'"')) )
                     else:
@@ -584,7 +665,11 @@ class View_Item_Ui_Form(object):
                 ui_field.setDisplayFormat('MM/dd/yyyy')
                 
                 if edit_mode:
-                    field_value = str(getattr(self.item_obj, field))
+                    if obj_mode:
+                        field_value = str(getattr(self.item_obj, field))
+                    else:
+                        field_value = dict_data[field]
+
                     ui_field.setDate(QDate.fromString(field_value))
 
                 self.gridLayout.addWidget(ui_field, position_index, 1, 1, 1)
@@ -598,8 +683,12 @@ class View_Item_Ui_Form(object):
                     getattr(ui_field, pr['property_name'])(pr['value'])
                 
                 if edit_mode:
-                    field_value = item_obj.model.fields[field].TYPE(getattr(self.item_obj, field) )
-                    getattr(ui_field, item_obj.model.fields[field].Set_UI_Value_Function )(field_value)
+                    if obj_mode:
+                        field_value = self.fields[field].TYPE(getattr(self.item_obj, field) )
+                    else:
+                        field_value = self.fields[field].TYPE(dict_data[field])
+
+                    getattr(ui_field, self.fields[field].Set_UI_Value_Function )(field_value)
 
                 self.gridLayout.addWidget(ui_field, position_index, 1, 1, 1)
 
@@ -620,7 +709,7 @@ class View_Item_Ui_Form(object):
                 SF.clear()
                 for i in DL_items[DL_ui_field.currentText()]:
                     SF.addItem(i)
-                if edit_mode:
+                if edit_mode and obj_mode:
                     current_SF  = vars(self.item_obj)[DL_subfield['subfield_name']]
                     if SF.findText( current_SF )>-1:
                         SF.setCurrentIndex( SF.findText( current_SF ) )

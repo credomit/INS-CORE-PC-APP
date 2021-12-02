@@ -315,9 +315,9 @@ class Model(object):
 
         plotitem = HoverableCurveItem(x, y, pen=pg.mkPen('w', width=10))
         plotitem.setClickable(True, width=10)
+
         plotitem.sigCurveHovered.connect(self.hovered)
         plotitem.sigCurveNotHovered.connect(self.leaveHovered)
-        
         plotitem.mode = mode
         plotitem.main_plot = plot
 
