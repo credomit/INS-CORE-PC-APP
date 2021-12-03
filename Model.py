@@ -212,63 +212,64 @@ class Model(object):
             
 
             i = 0
-            for mode in self.GRAPH_MODES:
-                setattr(self, "dashboard_frame_"+mode, QFrame(self.dashboardAreaWidgetContents))
-                frame = getattr(self, "dashboard_frame_"+mode)
-                frame.setObjectName(mode+"_dashboard_frame_")
-                frame.setMinimumSize(QSize(0, 282))
-                frame.setFrameShape(QFrame.StyledPanel)
+            if len(self.objects):
+                for mode in self.GRAPH_MODES:
+                    setattr(self, "dashboard_frame_"+mode, QFrame(self.dashboardAreaWidgetContents))
+                    frame = getattr(self, "dashboard_frame_"+mode)
+                    frame.setObjectName(mode+"_dashboard_frame_")
+                    frame.setMinimumSize(QSize(0, 282))
+                    frame.setFrameShape(QFrame.StyledPanel)
 
-                setattr(self, "dashboard_frame_gridLayout_"+mode,QGridLayout(frame))
-                dashboard_frame_gridLayout = getattr(self, "dashboard_frame_gridLayout_"+mode)
-                dashboard_frame_gridLayout.setObjectName("dashboard_frame_gridLayout_"+mode)
+                    setattr(self, "dashboard_frame_gridLayout_"+mode,QGridLayout(frame))
+                    dashboard_frame_gridLayout = getattr(self, "dashboard_frame_gridLayout_"+mode)
+                    dashboard_frame_gridLayout.setObjectName("dashboard_frame_gridLayout_"+mode)
 
-                setattr(self, "dashboard_frame_graph_"+mode,pg.GraphicsWindow())
-                graph = getattr(self, "dashboard_frame_graph_"+mode)
-                graph.setObjectName(u"frame_"+mode)
-                graph.setFrameShape(QFrame.StyledPanel)
-                graph.setFrameShadow(QFrame.Raised)
-                dashboard_frame_gridLayout.addWidget(graph, 2, 0, 1, 2)
+                    setattr(self, "dashboard_frame_graph_"+mode,pg.GraphicsWindow())
+                    graph = getattr(self, "dashboard_frame_graph_"+mode)
+                    graph.setObjectName(u"frame_"+mode)
+                    graph.setFrameShape(QFrame.StyledPanel)
+                    graph.setFrameShadow(QFrame.Raised)
+                    dashboard_frame_gridLayout.addWidget(graph, 2, 0, 1, 2)
 
-                setattr(self, "dashboard_frame_items_"+mode, QComboBox(frame))
-                items_combo = getattr(self, "dashboard_frame_items_"+mode)
-                items_combo.setObjectName(u"comboBox")
-                items_combo.setMaximumSize(QSize(175, 16777215))
-                for item in self.objects: 
-                    items_combo.addItem(str(item), item)
+                    setattr(self, "dashboard_frame_items_"+mode, QComboBox(frame))
+                    items_combo = getattr(self, "dashboard_frame_items_"+mode)
+                    items_combo.setObjectName(u"comboBox")
+                    items_combo.setMaximumSize(QSize(175, 16777215))
+                    for item in self.objects: 
+                        items_combo.addItem(str(item), item)
 
-                setattr(self, "dashboard_frame_info_"+mode, QLabel(frame))
-                info = getattr(self, "dashboard_frame_info_"+mode)
-                info.setObjectName("label_info_"+mode)
-                info.setText('')
-                dashboard_frame_gridLayout.addWidget(info, 1, 1, 1, 2)
+                    setattr(self, "dashboard_frame_info_"+mode, QLabel(frame))
+                    info = getattr(self, "dashboard_frame_info_"+mode)
+                    info.setObjectName("label_info_"+mode)
+                    info.setText('')
+                    dashboard_frame_gridLayout.addWidget(info, 1, 1, 1, 2)
 
-                self.View_Graph(mode)
-                items_combo.currentIndexChanged.connect(partial(  self.View_Graph, mode ))
+                    self.View_Graph(mode)
+                    items_combo.currentIndexChanged.connect(partial(  self.View_Graph, mode ))
 
-                dashboard_frame_gridLayout.addWidget(items_combo, 1, 0, 1, 1)
-
-
-                setattr(self, "dashboard_frame_title_"+mode, QLabel(frame))
-                label = getattr(self, "dashboard_frame_title_"+mode)
-                label.setObjectName("label_title_"+mode)
-                sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-                sizePolicy.setHorizontalStretch(0)
-                sizePolicy.setVerticalStretch(0)
-                sizePolicy.setHeightForWidth(label.sizePolicy().hasHeightForWidth())
-                label.setSizePolicy(sizePolicy)
-                font = QFont()
-                font.setPointSize(18)
-                label.setFont(font)
-                label.setText(mode.title())
-
-                dashboard_frame_gridLayout.addWidget(label, 0, 0, 1, 2)
-                self.dashboardGridLayout.addWidget(frame , i, 0, 1, 1)
-
-                i+=1
+                    dashboard_frame_gridLayout.addWidget(items_combo, 1, 0, 1, 1)
 
 
-            self.dashboard.setWidget(self.dashboardAreaWidgetContents)
+                    setattr(self, "dashboard_frame_title_"+mode, QLabel(frame))
+                    label = getattr(self, "dashboard_frame_title_"+mode)
+                    label.setObjectName("label_title_"+mode)
+                    sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+                    sizePolicy.setHorizontalStretch(0)
+                    sizePolicy.setVerticalStretch(0)
+                    sizePolicy.setHeightForWidth(label.sizePolicy().hasHeightForWidth())
+                    label.setSizePolicy(sizePolicy)
+                    font = QFont()
+                    font.setPointSize(18)
+                    label.setFont(font)
+                    label.setText(mode.title())
+
+                    dashboard_frame_gridLayout.addWidget(label, 0, 0, 1, 2)
+                    self.dashboardGridLayout.addWidget(frame , i, 0, 1, 1)
+
+                    i+=1
+
+
+                self.dashboard.setWidget(self.dashboardAreaWidgetContents)
 
 
     def point_clicked(self, item, current_item):
