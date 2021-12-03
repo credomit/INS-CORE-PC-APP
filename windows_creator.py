@@ -669,7 +669,7 @@ class View_Item_Ui_Form(object):
                     else:
                         field_value = dict_data[field]
 
-                    ui_field.setDate(QDate.fromString(field_value))
+                    ui_field.setDate(field_value)
 
                 self.gridLayout.addWidget(ui_field, position_index, 1, 1, 1)
 
