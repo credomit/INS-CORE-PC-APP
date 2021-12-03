@@ -291,14 +291,14 @@ class Model(object):
         ydict   = dict(enumerate(graph_data['y-keys']))
 
         stringaxis = pg.AxisItem(orientation='bottom')
-        stringaxis.setTicks([xdict.items()])
+        stringaxis.setTicks(['']*len(xdict))
 
         stringaxis_y = pg.AxisItem(orientation='left')
-        stringaxis_y.setTicks([ydict.items()])
+        stringaxis_y.setTicks(['']*len(ydict))
 
 
         graph.clear()
-        plot = graph.addPlot(axisItems={'bottom': ['']*len(stringaxis), 'left': ['']*len(stringaxis_y)})
+        plot = graph.addPlot(axisItems={'bottom': stringaxis, 'left': stringaxis_y})
         plot.showGrid(x = True, y = True, alpha = 0.5)
         
         line = plot.plot(x,y,  symbol ='o', symbolPen ='g',
