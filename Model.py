@@ -299,7 +299,7 @@ class Model(object):
 
         graph.clear()
         plot = graph.addPlot(axisItems={'bottom': stringaxis, 'left': stringaxis_y})
-        plot.showGrid(x = True, y = True, alpha = 0.2)
+        plot.showGrid(x = True, y = True, alpha = 0.5)
         
         line = plot.plot(x,y,  symbol ='o', symbolPen ='g',
                     symbolBrush = 1.2, name ='green', width = 1,  pen=pg.mkPen('g', width=2.5))
