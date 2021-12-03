@@ -149,6 +149,9 @@ class Item(object):
         for mode in self.model.GRAPH_MODES:
             if getattr(self.model , "dashboard_frame_items_"+mode).currentData() == self:
                 self.model.View_Graph(mode)
+
+            items_combo = getattr(self.model, "dashboard_frame_items_"+mode)
+            items_combo.addItem(str(self), self)
         
 
 
@@ -251,7 +254,6 @@ class Model(object):
 
                 dashboard_frame_gridLayout.addWidget(items_combo, 1, 0, 1, 1)
 
-
                 setattr(self, "dashboard_frame_title_"+mode, QLabel(frame))
                 label = getattr(self, "dashboard_frame_title_"+mode)
                 label.setObjectName("label_title_"+mode)
@@ -287,8 +289,6 @@ class Model(object):
         xdict   = dict(enumerate(graph_data['x-keys']))
         y       = graph_data['y']
         ydict   = dict(enumerate(graph_data['y-keys']))
-        
-        #ydict = dict(enumerate(y))
 
         stringaxis = pg.AxisItem(orientation='bottom')
         stringaxis.setTicks([xdict.items()])
@@ -299,10 +299,10 @@ class Model(object):
 
         graph.clear()
         plot = graph.addPlot(axisItems={'bottom': stringaxis, 'left': stringaxis_y})
-        plot.showGrid(x = True, y = True, alpha = 0.5)
+        plot.showGrid(x = False, y = False, alpha = 0.5)
         
         line = plot.plot(x,y,  symbol ='o', symbolPen ='g',
-                    symbolBrush = 1.2, name ='green', width = 1,  pen=pg.mkPen('g', width=2.5))
+                    symbolBrush = 1.5, name ='green', width = 1,  pen=pg.mkPen('g', width=2.5))
 
         line.installSceneEventFilter(plot)
         line.setAcceptHoverEvents(True)
