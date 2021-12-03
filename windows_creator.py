@@ -236,7 +236,7 @@ class View_Item_Ui_Form(object):
                 data[field] =  dict_data
 
             elif form.fields[field].field_type == 'DateField':
-                data[field] = vars(form)[field].date().toString()
+                data[field] = vars(form)[field].date().toPyDate().isoformat()
                 
 
             else:
@@ -267,7 +267,6 @@ class View_Item_Ui_Form(object):
         
 
     def call_edit_subitem_window(self, ui_list, field):
-        print(ui_list.currentItem().data(6), type(ui_list.currentItem().data(6)))
         self.subwindow = QtWidgets.QDialog()
 
         ui = View_Item_Ui_Form()
@@ -303,7 +302,7 @@ class View_Item_Ui_Form(object):
                     data[field] =  getattr(self, field+'_data')
 
                 elif self.fields[field].field_type == 'DateField':
-                    data[field] =  getattr(self, field).date().toString()
+                    data[field] =  getattr(self, field).date().toPyDate().isoformat()
 
                 else:
                     data[field] = getattr(vars(self)[field] , self.fields[field].Get_UI_Value_Function  )()
@@ -329,7 +328,7 @@ class View_Item_Ui_Form(object):
                 setattr(self.item_obj, field, dict_data)
 
             elif item.model.fields[field].field_type == 'DateField':
-                setattr(self.item_obj, field, vars(self)[field].date().toString())
+                setattr(self.item_obj, field, vars(self)[field].date().toPyDate().isoformat())
                 
 
             else:
@@ -699,7 +698,7 @@ class View_Item_Ui_Form(object):
             self.gridLayout.addWidget(self.label, position_index, 0, 1, 1)
 
             position_index+=1
-
+        print(dictlist_4_sublist)
         for DL_subfield in dictlist_4_sublist:
                 DL_ui_field = vars(self)[DL_subfield['mainfield_name']]
                 DL_items    = self.fields[DL_subfield['mainfield_name']].item_dict
