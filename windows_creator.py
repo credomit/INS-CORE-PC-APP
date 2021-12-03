@@ -142,7 +142,7 @@ def loading_window(app):
 	        background-image: url("l1.png");
 			background-repeat: no-repeat;
 			background-position: center;  
-	}''')
+	}'''+app.currentStyle)
 
     ui.open.setText(app.translate('Open'))
     ui.create.setText(app.translate('Create new file'))

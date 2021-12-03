@@ -5,9 +5,14 @@ from PyQt5.QtWidgets import *
 class translator(object):
     
     def __init__(self, app):
+        if not os.path.exists('languages'):
+            os.mkdir('languages')
+
+        
         config = configparser.ConfigParser()
         config.read( os.path.join('INSLPCModel','settings.ini'))
         self.language = config['default']['default-language']
+        app.current_language = self.language
         self.apply_language(app)
 
 
@@ -50,6 +55,7 @@ class translator(object):
 
 
     def set_language(self, app, p_ui):
+        print('sssad')
         app.current_language = p_ui.Languages_Box.currentData()
         self.language = p_ui.Languages_Box.currentData()
         self.apply_language(app)

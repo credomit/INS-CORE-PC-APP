@@ -9,7 +9,7 @@ from pathlib import Path
 from .preferences import *
 import pyqtgraph as pg
 import sys, random
-
+from .styler import Styler
 from pyqtgraph import QtCore as QtCoregraph
 from pyqtgraph import QtGui as QtGuigraph
 import pyautogui
@@ -49,8 +49,9 @@ class INSAPP(object):
         MainWindow                  = QtWidgets.QMainWindow()
         self.UI                     = uic.loadUi(self.UI_file, MainWindow)
         self.UI.setWindowTitle(app_name)
-        self.UI.setStyleSheet(self.qss_style)
+        
 
+        self.Styler                 = Styler(self)
         self.translator             = translator(self)
         self.translate              = self.translator.translate
         self.preferences_call_btn   = getattr(self.UI, preferences_call_btn)
@@ -239,7 +240,7 @@ class Model(object):
                 setattr(self, "dashboard_frame_info_"+mode, QLabel(frame))
                 info = getattr(self, "dashboard_frame_info_"+mode)
                 info.setObjectName("label_info_"+mode)
-                info.setText(mode.title())
+                info.setText('')
                 dashboard_frame_gridLayout.addWidget(info, 1, 1, 1, 2)
 
                 self.View_Graph(mode)
@@ -270,60 +271,45 @@ class Model(object):
             self.dashboard.setWidget(self.dashboardAreaWidgetContents)
 
 
-    def hovered(self, item, current_item):
-        try:
-            current_x = current_item.pos().x()
-            if current_x < int(current_x)+0.5: # get nearest point x
-                current_x = int(current_x)
-            
-            else:
-                current_x = int(current_x)+1
-
-
-            current_x       = list(item.xData).index(current_x)
-            current_x_view  = item.main_plot.stringaxis[current_x]
-            current_y       = list(item.yData)[current_x]
-            info_label      = getattr(self, "dashboard_frame_info_"+item.mode)
-            info_label.setText(str(current_x_view)+ '   |   ' + str(current_y))
-        except:
-            self.leaveHovered( item)
-        
-        
-        
-
-    def leaveHovered(self, item):
-        info_label = getattr(self, "dashboard_frame_info_"+item.mode)
-        info_label.setText('')
-
+    def point_clicked(self, item, current_item):
+        info_label      = getattr(self, "dashboard_frame_info_"+item.mode)
+        info_label.setText(item.point_data[current_item[0].pos().x()])
 
     def View_Graph(self, mode):
 
         graph = getattr(self, "dashboard_frame_graph_"+mode)
         items_combo = getattr(self, "dashboard_frame_items_"+mode)
         graph_data = self.GRAPH_MODES[mode](items_combo.currentData())
-        x = graph_data['x'] 
-        y = graph_data['y']
-        xdict = dict(enumerate(x))
+        x       = graph_data['x'] 
+        xdict   = dict(enumerate(graph_data['x-keys']))
+        y       = graph_data['y']
+        ydict   = dict(enumerate(graph_data['y-keys']))
+        
+        #ydict = dict(enumerate(y))
 
         stringaxis = pg.AxisItem(orientation='bottom')
         stringaxis.setTicks([xdict.items()])
+
+        stringaxis_y = pg.AxisItem(orientation='left')
+        stringaxis_y.setTicks([ydict.items()])
+
+
         graph.clear()
-        plot = graph.addPlot(axisItems={'bottom': stringaxis})
+        plot = graph.addPlot(axisItems={'bottom': stringaxis, 'left': stringaxis_y})
         plot.showGrid(x = True, y = True, alpha = 0.2)
-        plot.stringaxis  = list(xdict.values())
         
-
-        plotitem = HoverableCurveItem(x, y, pen=pg.mkPen('w', width=10))
-        plotitem.setClickable(True, width=10)
-
-        plotitem.sigCurveHovered.connect(self.hovered)
-        plotitem.sigCurveNotHovered.connect(self.leaveHovered)
-        plotitem.mode = mode
-        plotitem.main_plot = plot
-
-        plot.addItem(plotitem)
-        plot.plot(list(xdict.keys()),y,  symbol ='o', symbolPen ='g',
+        line = plot.plot(x,y,  symbol ='o', symbolPen ='g',
                     symbolBrush = 1.2, name ='green', width = 1,  pen=pg.mkPen('g', width=2.5))
+
+        line.installSceneEventFilter(plot)
+        line.setAcceptHoverEvents(True)
+        plot.setAcceptHoverEvents(True)
+        line.sigPointsClicked.connect(self.point_clicked)
+        line.mode           = mode
+        line.main_plot      = plot
+        line.stringaxis     = list(xdict)
+        line.point_data     = graph_data['point-data']
+        
 
 
     def search(self, text):
