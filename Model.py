@@ -291,10 +291,10 @@ class Model(object):
         ydict   = dict(enumerate(graph_data['y-keys']))
 
         stringaxis = pg.AxisItem(orientation='bottom')
-        stringaxis.setTicks(['']*len(xdict))
+        stringaxis.setTicks([xdict.items()])
 
         stringaxis_y = pg.AxisItem(orientation='left')
-        stringaxis_y.setTicks(['']*len(ydict))
+        stringaxis_y.setTicks([ydict.items()])
 
 
         graph.clear()
