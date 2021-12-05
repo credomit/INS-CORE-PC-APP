@@ -50,6 +50,8 @@ class INSAPP(object):
         self.UI                     = uic.loadUi(self.UI_file, MainWindow)
         self.UI.setWindowTitle(app_name)
         
+        
+        
 
         self.Styler                 = Styler(self)
         self.translator             = translator(self)
@@ -66,11 +68,15 @@ class INSAPP(object):
 
         self.pyqt5_app.exec_()
 
-    def run_main_window(self):
-
+    def run_main_window(self, LW): # LW : Loading Window
+        step_value = int(100 / len(self.listed_items))
+        
         for item in self.listed_items:
+            LW.ui.progressBar.setValue(LW.ui.progressBar.value() + step_value)
             setattr(self, item.__name__ , item(INSApp = self ))
-
+        
+        LW.close()
+        self.UI.setStyleSheet(self.currentStyle)
         self.UI.show()
             
 
@@ -184,9 +190,14 @@ class Model(object):
         #connections
         if self.add_button != None:
             self.add_button.clicked.connect(lambda: create_item_window(self.INSApp, self))
+            self.add_button.setText('')
+            self.add_button.setIcon(self.INSApp.Styler.get_icon('add'))
 
         if self.delete_button != None:
             self.delete_button.clicked.connect(self.delete_selected)
+            self.delete_button.setText('')
+            self.delete_button.setIcon(self.INSApp.Styler.get_icon('delete'))
+            self.delete_button.setProperty('btn_type','delete')
 
         if self.ui_list != None:
             self.ui_list.itemDoubleClicked.connect(edit_item_window)
@@ -196,6 +207,7 @@ class Model(object):
             fields_filters_text = [ f'@{f}:' for f in self.fields.keys() ]
             filters_compliter =  QCompleter(list(self.filters.keys()) + fields_filters_text )
             self.search_bar.setCompleter(filters_compliter)
+            self.search_bar.setPlaceholderText(self.INSApp.translate('Search (Word, #, @)'))
         
         if self.ui_list_info != None:
             self.ui_list_info.setText(f'{len(self.objects)} item')

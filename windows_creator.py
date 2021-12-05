@@ -35,8 +35,8 @@ class Loading_UI(object):
             config.write(open(os.path.join('INSLPCModel','settings.ini'),'w'))
 
             self.app.database_path = file_name[0]
-            l_ui.close()
-            self.app.run_main_window()
+            
+            self.app.run_main_window(l_ui)
 
     def create_INSPP_file(self,l_ui):
 
@@ -54,8 +54,8 @@ class Loading_UI(object):
             
             
             self.app.database_path = file_name[0]
-            l_ui.close()
-            self.app.run_main_window()
+            
+            self.app.run_main_window(l_ui)
 
     def setupUi(self, login_2):
         login_2.setObjectName("login_2")
@@ -67,19 +67,22 @@ class Loading_UI(object):
         self.progressBar.setProperty("value", 0)
         self.progressBar.setAlignment(QtCore.Qt.AlignCenter)
         self.progressBar.setTextVisible(False)
-        self.progressBar.setObjectName("progressBar")
+        self.progressBar.setObjectName("Loading_win_ProgressBar")
+        self.progressBar.setMinimumSize(QtCore.QSize(625, 30))
+        self.progressBar.setMaximumSize(QtCore.QSize(625, 30))
         self.frame = QtWidgets.QFrame(login_2)
         self.frame.setGeometry(QtCore.QRect(10, -10, 781, 481))
-        self.frame.setStyleSheet("border-radius: 10px;background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(255, 255, 255, 0), stop:1 rgba(255, 255, 255, 0));")
+        self.frame.setStyleSheet("#frame{border-radius: 10px;background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(255, 255, 255, 0), stop:1 rgba(255, 255, 255, 0));}")
         self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame.setObjectName("frame")
         self.exit = QtWidgets.QPushButton(self.frame)
         self.exit.setGeometry(QtCore.QRect(139, 75, 30, 30))
-        self.exit.setMinimumSize(QtCore.QSize(30, 30))
-        self.exit.setMaximumSize(QtCore.QSize(30, 30))
+        self.exit.setMinimumSize(QtCore.QSize(20, 20))
+        self.exit.setMaximumSize(QtCore.QSize(20, 20))
         self.exit.setObjectName("exit")
-        self.exit.setText('X')
+        self.exit.setIcon(self.app.Styler.get_icon('exit'))
+        self.exit.setProperty('btn_type','exit')
         self.msg = QtWidgets.QLabel(self.frame)
         self.msg.setGeometry(QtCore.QRect(350, 370, 160, 17))
         font = QtGui.QFont()
@@ -134,8 +137,10 @@ def loading_window(app):
 
 
     ui = Loading_UI()
-    ui.setupUi(app.LoadinWindow)
     ui.app = app
+    ui.setupUi(app.LoadinWindow)
+    
+    app.LoadinWindow.ui = ui
 
     app.LoadinWindow.setStyleSheet(app.qss_style+'''
     #frame{
@@ -706,6 +711,8 @@ class View_Item_Ui_Form(object):
                 
 
                 SF.clear()
+                print(DL_items)
+                print(DL_ui_field.currentText())
                 for i in DL_items[DL_ui_field.currentText()]:
                     SF.addItem(i)
                 if edit_mode and obj_mode:
