@@ -12,7 +12,8 @@ class translator(object):
         config = configparser.ConfigParser()
         config.read( os.path.join('INSLPCModel','settings.ini'))
         self.language = config['default']['default-language']
-        app.current_language = self.language
+        
+        
         self.apply_language(app)
 
 
@@ -25,7 +26,6 @@ class translator(object):
             language['dictionary'] = {}  
             language.write(open(os.path.join('languages', f'{self.language}.ini'),'w'))
 
-
         # apply on main ui labels
         for label in app.translateable_labels:
             try:
@@ -34,14 +34,12 @@ class translator(object):
             except:
                 print(f'\033[31mLabel "{label}" Not Found!  \033[0m')    
                 exit()
-
-        
-
-
-        
+       
         # 
         if 'Layout_direction' in language['language_info']:
+            app.current_language_layout_direction = language['language_info']['Layout_direction']
             if language['language_info']['Layout_direction'] == 'RTL':
+                
                 app.UI.setLayoutDirection(QtCore.Qt.RightToLeft)
 
             else:
@@ -49,7 +47,16 @@ class translator(object):
 
         else:
             language_sh = language['language_info']['language_shortcut']
-            print(f'\033[31m{ language_sh } language layout direction  Not Set!  \033[0m')    
+            print(f'\033[31m{ language_sh } language layout direction  Not Set!  \033[0m')  
+
+
+
+        config = configparser.ConfigParser()
+        config.read( os.path.join('INSLPCModel','settings.ini'))
+        languages =  json.loads(config['languages']['set'])
+
+        app.current_language = self.language
+        app.current_language_name = [ list(i.keys())[0] for i in languages if list(i.values())[0] == self.language ][0]  
   
 
 

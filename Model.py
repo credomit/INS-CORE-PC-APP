@@ -13,6 +13,7 @@ from .styler import Styler
 from pyqtgraph import QtCore as QtCoregraph
 from pyqtgraph import QtGui as QtGuigraph
 import pyautogui
+from types import MethodType
 
 def replace_variable_value(item, text):
     if text != '':
@@ -49,6 +50,7 @@ class INSAPP(object):
         MainWindow                  = QtWidgets.QMainWindow()
         self.UI                     = uic.loadUi(self.UI_file, MainWindow)
         self.UI.setWindowTitle(app_name)
+        MainWindow.closeEvent = MethodType(self.closeEvent,MainWindow)
         
         
         
@@ -61,7 +63,15 @@ class INSAPP(object):
         
         
         
-
+    def closeEvent(self,r, event):
+            close = QtWidgets.QMessageBox.question(self.UI,
+	                                         "QUIT",
+	                                         self.translate(f'Are you sure want to close {self.app_name}?'),
+	                                         QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No )
+            if close == QtWidgets.QMessageBox.Yes:
+                event.accept()
+            else:
+                event.ignore()
 
     def run(self):
         loading_window(self)
@@ -76,7 +86,7 @@ class INSAPP(object):
             setattr(self, item.__name__ , item(INSApp = self ))
         
         LW.close()
-        self.UI.setStyleSheet(self.currentStyle)
+        self.Styler.apply_style()
         self.UI.show()
             
 
@@ -139,8 +149,7 @@ class Item(object):
                     value = '""'
                 elif type(value) in [list, set, dict, tuple]:
                     if self.model.fields[field].field_type == 'ManyToManyField':
-                        value =  getattr(self, field,'_data')
-
+                        value =  getattr(self, field+'_data')
                     value = json.dumps(value)
                 db_connection.execute(f''' UPDATE {self.model.DBTableName} set {field} = ? where id = {self.id} ''', [value,])
                 new_data[field] = value
@@ -205,8 +214,10 @@ class Model(object):
         if self.search_bar != None:
             self.search_bar.textChanged.connect(self.search)
             fields_filters_text = [ f'@{f}:' for f in self.fields.keys() ]
-            filters_compliter =  QCompleter(list(self.filters.keys()) + fields_filters_text )
-            self.search_bar.setCompleter(filters_compliter)
+            self.filters_compliter =  QCompleter(list(self.filters.keys()) + fields_filters_text )
+            self.filters_compliter.setObjectName('Completer')
+            self.filters_compliter.popup().setStyleSheet('background-color:rgba(0,0,0,0.6);color:rgb(225,225,225);')
+            self.search_bar.setCompleter(self.filters_compliter)
             self.search_bar.setPlaceholderText(self.INSApp.translate('Search (Word, #, @)'))
         
         if self.ui_list_info != None:
@@ -222,8 +233,8 @@ class Model(object):
 
 
 
-            pg.setConfigOption('background', 'w')
-            pg.setConfigOption('foreground', QColor(20,20,20))
+            pg.setConfigOption('background', None)
+            
             
 
             i = 0
@@ -232,6 +243,8 @@ class Model(object):
                 setattr(self, "dashboard_frame_"+mode, QFrame(self.dashboardAreaWidgetContents))
                 frame = getattr(self, "dashboard_frame_"+mode)
                 frame.setObjectName(mode+"_dashboard_frame_")
+                frame.setProperty('frame_type', 'graph')
+
                 frame.setMinimumSize(QSize(0, 282))
                 frame.setFrameShape(QFrame.StyledPanel)
 
@@ -284,7 +297,7 @@ class Model(object):
 
                 i+=1
 
-
+            self.dashboard.setProperty('frame_type', 'handler')
             self.dashboard.setWidget(self.dashboardAreaWidgetContents)
 
 
@@ -334,14 +347,13 @@ class Model(object):
 
 
             if text[0] =='#':#custom filters
-                if text.split(':')[0] in self.filters.keys():
+                if text.split(':')[0]+':' in self.filters.keys():
 
                     if ':' in text : # have values
                         value = ':'.join(text.split(':')[1:])
-                        filtered_objects = self.filters[text.split(':')[0]](self, self.objects, value = value)
+                        filtered_objects = self.filters[text.split(':')[0]+':'](self, self.objects, value = value)
                     else:
-                        filtered_objects = self.filters[text.split(':')[0]](self, self.objects)
-
+                        filtered_objects = self.filters[text.split(':')[0]+':'](self, self.objects)
 
 
             elif text[0] =='@':#fields filters
@@ -350,9 +362,8 @@ class Model(object):
                     field_value    = ':'.join(text[1:].split(':')[1:])
                     
                     for obj in self.objects:
-                        if field_value in str(getattr(obj, field)):
+                        if (self.fields[field].field_type == 'OneToOneField' and field_value in str(getattr(obj, field+'__obj'))) or field_value in str(getattr(obj, field)):
                             filtered_objects.append(obj)
-                    
 
                 except:
                     pass
@@ -534,7 +545,6 @@ class Model(object):
         if dict_inner_data != None:
             inner_data = dict_inner_data
 
-        print(inner_data)
 
         fields  = []
         data    = []
@@ -575,14 +585,14 @@ class Model(object):
         data_n['view_name'] = self.view_name
         data_n['id'] = int(item.lastrowid)
         data_n['Model'] = self
-        itam_object = Item(data_n, self)
-        self.objects.append(itam_object)
-        self.add_item_to_list(itam_object)
+        item_object = Item(data_n, self)
+        self.objects.append(item_object)
+        self.add_item_to_list(item_object)
 
         if self.on_add!=None:
-            self.on_add(itam_object)
+            self.on_add(item_object)
 
-        return itam_object
+        return item_object
 
         
     def delete_selected(self):
