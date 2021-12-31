@@ -2,7 +2,6 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-from PyQt5.QtGui import *
 from .fields import Fields
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys, os, configparser, json
@@ -13,9 +12,6 @@ import datetime
 
 
 def replace_variable_value(text, item = None , data= None):
-    
-    
-    
     return eval(text)
 
 
@@ -71,12 +67,14 @@ class Loading_UI(object):
         self.progressBar.setObjectName("Loading_win_ProgressBar")
         self.progressBar.setMinimumSize(QtCore.QSize(625, 30))
         self.progressBar.setMaximumSize(QtCore.QSize(625, 30))
-        self.frame = QtWidgets.QFrame(login_2)
-        self.frame.setGeometry(QtCore.QRect(10, -10, 781, 481))
+        self.frame = QtWidgets.QLabel(login_2)
+        self.frame.setGeometry(QtCore.QRect(0, 0, 781, 481))
         self.frame.setStyleSheet("#frame{border-radius: 10px;background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 rgba(255, 255, 255, 0), stop:1 rgba(255, 255, 255, 0));}")
         self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame.setObjectName("frame")
+        self.frame.setPixmap(QPixmap(u"l1.png"))
+        self.frame.setScaledContents(True)
         self.exit = QtWidgets.QPushButton(self.frame)
         self.exit.setGeometry(QtCore.QRect(139, 75, 30, 30))
         self.exit.setMinimumSize(QtCore.QSize(20, 20))
@@ -124,16 +122,13 @@ def loading_window(app):
     app.LoadinWindow.setWindowModality(QtCore.Qt.ApplicationModal)
     app.LoadinWindow.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
 
-    qtRectangle = app.LoadinWindow.frameGeometry()
-    centerPoint = QDesktopWidget().availableGeometry().center()
-    qtRectangle.moveCenter(centerPoint)
-    app.LoadinWindow.move(qtRectangle.topLeft())
+
+    qr = app.LoadinWindow.frameGeometry()
+    cp = QDesktopWidget().availableGeometry().center()
+    qr.moveCenter(cp)
+    app.LoadinWindow.move(qr.topLeft())
 
     app.LoadinWindow.setAttribute(Qt.WA_TranslucentBackground)
-
-    loading_cover = os.path.join('loading-covers', 'l1.png')
-
-    
 
 
 
@@ -145,9 +140,10 @@ def loading_window(app):
 
     app.LoadinWindow.setStyleSheet(app.qss_style+'''
     #frame{
-	        background-image: url("l1.png");
 			background-repeat: no-repeat;
 			background-position: center;  
+
+
 	}'''+app.currentStyle)
 
     ui.open.setText(app.translate('Open'))
@@ -193,13 +189,19 @@ class View_Item_Ui_Form(object):
 
     def add_subitem(self, data, main_field):
         main_field_obj = self.fields[main_field]
+        if main_field_obj.before_add == None or main_field_obj.before_add(data = data | {'item_object':self.item_obj}):
+                
+                if self.obj_mode:
+                    o_data = getattr(self.item_obj, main_field+'_data')
+                    o_data.append(data)
+                    setattr(self.item_obj, main_field+'_data', o_data )
 
-        if chack_static_statement_status(main_field_obj.add_conditions, self.model.INSApp, self.item_obj, data = vars(self)|data):
-            if main_field_obj.before_add == None or main_field_obj.before_add(data = data | {'item_object':self.item_obj}):
+                else:
+                    o_data = self.dict_data[main_field]
+                    o_data.append(data)
+                    self.dict_data[main_field] = o_data 
 
-                o_data = getattr(self.item_obj, main_field+'_data')
-                o_data.append(data)
-                setattr(self.item_obj, main_field+'_data', o_data )
+                
                 
                 list_ui   = getattr(self, main_field+'_listWidget')
                 view_name = self.fields[main_field].view_name
@@ -207,77 +209,67 @@ class View_Item_Ui_Form(object):
 
                 if type(view_name) in [list, set, tuple]:# fixing view name if it comeup as list or tuple...
                     view_name = ''.join(list([ str(i) for i in view_name]))
-                
-
-            
 
                 item = QtWidgets.QListWidgetItem()
                 item.setText(view_name)
                 item.setData(6,data)
                 list_ui.addItem(item)
+                #data['item__obj'] = self.item_obj
+                #data['item__ui'] = self
             
                 if self.fields[main_field].on_add != None:
-                    self.fields[main_field].on_add(data = data)
+                    self.fields[main_field].on_add(main_ui = self, data = data)
                 self.subwindow.ui.saved = True
                 self.subwindow.close()
             
 
     def remove_subitem(self,field):
         try:
-            current_item = getattr(self, field+'_listWidget').currentItem()
-            list_ui = getattr(self, field+'_listWidget')
-            item_data = list_ui.currentItem().data(6)
-            list_ui.takeItem(list_ui.currentRow())
-            getattr(self.item_obj, field+'_data').remove(current_item.data(6))
+            if self.model.fields[field].before_delete == None or self.model.fields[field].before_delete(item = self.item_obj):
 
-            if self.model.fields[field].on_delete != None:
-                    self.model.fields[field].on_delete(data = item_data)
+                current_item = getattr(self, field+'_listWidget').currentItem()
+                list_ui = getattr(self, field+'_listWidget')
+                item_data = list_ui.currentItem().data(6)
+                list_ui.takeItem(list_ui.currentRow())
+                getattr(self.item_obj, field+'_data').remove(current_item.data(6))
+
+                if self.model.fields[field].on_delete != None:
+                        self.model.fields[field].on_delete(data = item_data)
         except:
             pass
 
     def edit_subitem(self, form):
-        
-
         data = {}
-        for field in form.fields.keys():
-
-            if form.fields[field].field_type == 'OneToOneField':
-                data[field] = vars(form)[field].currentData()
-
-            elif form.fields[field].field_type == 'ManyToManyField':
-                dict_data = getattr(self.item_obj, field+'_data')
-                data[field] =  dict_data
-
-            elif form.fields[field].field_type == 'DateField':
-                data[field] = vars(form)[field].date().toPyDate().isoformat()
-                
-
-            else:
-                data[field] = getattr(vars(form)[field] , form.fields[field].Get_UI_Value_Function  )()
-
-        old_data =  getattr(self.item_obj, form.main_field+'_data')
         
-        old_data.remove(form.dict_data)
-        old_data.append(data)
-        setattr(self.item_obj, form.main_field+'_data', old_data)
+        for f in form.fields:
+            data[f] = form.fields[f].get_data()
         
-        ui_item =  getattr(self, form.main_field+'_listWidget').currentItem()
-        ui_item.setData(6,data)
+        print(self, form)
 
-        view_name = self.fields[form.main_field].view_name
+        if self.obj_mode:
+            dict_data = getattr(self.item_obj, form.main_field+'_data')
+            
+            main_ui_field = self.fields[form.main_field].listWidget
+            main_ui_field.currentItem().setText(replace_variable_value(self.fields[form.main_field].view_name, item = self.item_obj, data = data))
 
-        view_name = replace_variable_value(view_name, data = data)
-        if type(view_name) not in [str, int]:
-            view_name = ''.join([ str(i) for i in view_name])
-        ui_item.setText(view_name)
+            if self.fields[form.main_field].before_delete == None or self.fields[form.main_field].before_delete(data = main_ui_field.currentItem().data(6)):
+                dict_data.remove( main_ui_field.currentItem().data(6) )
+                dict_data.append(data)
+                main_ui_field .currentItem().setData(6, data)
+                setattr(self.item_obj, form.main_field+'_data', dict_data)
+                form.saved = True
 
-        if self.fields[form.main_field].on_edit != None:
-            self.fields[form.main_field].on_edit(old_data = form.dict_data, edited_data =data )
+        else:
+            main_ui_field =  self.fields[form.main_field].listWidget
+            self.dict_data[form.main_field].remove(main_ui_field.currentItem().data(6) )
+            main_ui_field.currentItem().setText(replace_variable_value(self.fields[form.main_field].view_name, data = data))
+            self.dict_data[form.main_field].append(data)
+            main_ui_field.currentItem().setData(6, data)
+            form.saved = True
 
-        form.saved = True
         form.Form.close()
+            
 
-        
 
     def call_edit_subitem_window(self, ui_list, field):
         self.subwindow = QtWidgets.QDialog()
@@ -305,54 +297,42 @@ class View_Item_Ui_Form(object):
             sub_ui.close()
 
     def add_item(self,  model, Form, is_subitem, data_receiver, main_field):
-        
             data = {}
             for field in self.fields.keys():
-                
-                if self.fields[field].field_type == 'OneToOneField':
-                    data[field] = vars(self)[field].currentData()
-
-                elif self.fields[field].field_type == 'ManyToManyField':
-                    data[field] =  getattr(self.item_obj, field+'_data')
-
-                elif self.fields[field].field_type == 'DateField':
-                    data[field] =  getattr(self, field).date().toPyDate().isoformat()
+                data[field] = self.fields[field].get_data()
+            
+            if (model.before_add == None) or (model.before_add(data = data)):
+                        
+                if (not is_subitem):
+                    item = model.create(dict_inner_data = data)
+                    if item:
+                        Form.ui.saved = True
+                        Form.close()
 
                 else:
-                    data[field] = getattr(vars(self)[field] , self.fields[field].Get_UI_Value_Function  )()
-                    
-            if (not is_subitem):
-                if chack_static_statement_status(model.add_conditions, self.model.INSApp, self.item_obj, data = data):
-                    model.create(dict_inner_data = data)
+                    data_receiver(data, main_field)
                     Form.ui.saved = True
                     Form.close()
 
-            else:
-                data_receiver(data, main_field)
-                Form.ui.saved = True
-                Form.close()
+                if Form.ui.saved and model.on_add != None:
+                    model.on_add(item = item)
+
+
 
     def edit_item(self, Form, item):
         data = {}
         for field in item.model.fields.keys():
+            data[field] = item.model.fields[field].get_data()
 
-            if item.model.fields[field].field_type == 'OneToOneField':
-                setattr( item, field, vars(self)[field].currentData())
+        if (item.model.before_edit == None) or (item.model.before_edit(item = item,data = data)):
+                        
+            for field in item.model.fields.keys():
+                setattr( item, field, item.model.fields[field].get_data())
 
-            elif item.model.fields[field].field_type == 'ManyToManyField':
-                dict_data = getattr(self.item_obj, field+'_data')
-                setattr(self.item_obj, field, dict_data)
+                item.save()
+                Form.ui.saved = True
+                Form.close()
 
-            elif item.model.fields[field].field_type == 'DateField':
-                setattr(self.item_obj, field, vars(self)[field].date().toPyDate().isoformat())
-                
-
-            else:
-                setattr( item, field, getattr(vars(self)[field] , item.model.fields[field].Get_UI_Value_Function  )())
-
-        item.save(call_on_edit = True)
-        Form.ui.saved = True
-        Form.close()
 
 
     def change_subdict_field(self,args):
@@ -381,7 +361,7 @@ class View_Item_Ui_Form(object):
     def cancel_op(self):
         ansower = QtWidgets.QMessageBox.question(self.Form , self.translate('Cancel Confirm') , self.translate('are you sure you want to exit?')+'\n'+self.translate('your changes will not be saves'))
         if ansower==QtWidgets.QMessageBox.Yes:
-            self.Form.ui.saved = True
+            self.saved = True
             self.Form.close()
             return True
         else:
@@ -398,6 +378,7 @@ class View_Item_Ui_Form(object):
         self.edit_mode  = edit_mode
         self.pui        = pui
         self.dict_data  = dict_data
+        self.obj_mode   = obj_mode
         self.saved      = False
         
         if obj_mode:
@@ -476,6 +457,7 @@ class View_Item_Ui_Form(object):
         fields_list = []
         current_field_index = 0
         dictlist_4_sublist = [] # to make sure that sublist loaded into ui
+        on_load_function = [] # function need to run when window is loaded
         self.ManyToManyField_pos = 0
         for field in self.fields.keys():
             
@@ -486,279 +468,18 @@ class View_Item_Ui_Form(object):
             ########################################################################
             ########################################################################
 
-            if self.fields[field].field_type == 'ListField':
-                setattr(self, field, QtWidgets.QComboBox(Form) )
-                ui_field = vars(self)[field]
-                ui_field.setObjectName(field)
-
-                item_text = ''
-                for item in self.fields[field].items_list:# set all items
-                    ui_field.addItem(item)
-
-                if self.fields[field].data_from_DictField != None:
-                    
-                    DictField_obj = self.model.fields[self.fields[field].data_from_DictField]
-                    current_DF_Text = getattr(self.pui,self.fields[field].data_from_DictField ).currentText()
-                    
-                    for item in DictField_obj.item_dict[current_DF_Text]:# set all items
-                        ui_field.addItem(item)
-
-                if edit_mode:# set current item
-                    if obj_mode:
-                        current_item_text = getattr(item_obj,field)
-
-                    else:
-                        current_item_text = dict_data[field]
-
-                    if ui_field.findText( current_item_text )>-1:
-                        ui_field.setCurrentIndex( ui_field.findText(current_item_text ))
-
-                self.gridLayout.addWidget(ui_field, position_index, 1, 1, 1)
-
-
-            elif self.fields[field].field_type == 'CustomListField':
-
-                
-                setattr(self, field+'LayoutWidget', QWidget(Form) )
-                horizontalLayoutWidget = getattr(self, field+'LayoutWidget')
-
-                horizontalLayoutWidget = QWidget(Form)
-                horizontalLayoutWidget.setObjectName(field+"horizontalLayoutWidget")
-
-                setattr(self, field+'Layout', QHBoxLayout(horizontalLayoutWidget) )
-                horizontalLayout = getattr(self, field+'Layout')
-                horizontalLayout.setObjectName(field+"horizontalLayout")
-                horizontalLayout.setContentsMargins(0, 0, 0, 0)
-
-                setattr(self, field, QComboBox(horizontalLayoutWidget))
-                comboBox = getattr(self, field)
-                comboBox.setObjectName(field)
-
-                
-                if self.fields[field].list_name not in config['CustomLists']:
-                    config['CustomLists'][ self.fields[field].list_name  ] = '[]'
-                    config.write(open(os.path.join('INSLPCModel','settings.ini'),'w'))
-                
-                list_items = json.loads(config['CustomLists'][ self.fields[field].list_name  ])
-                for it in list_items:
-                    comboBox.addItem(it)
-
-                if edit_mode:# set current item
-                    if obj_mode:
-                        current_item_text = getattr(item_obj,field)
-                    else:
-                        current_item_text = dict_data[field]
-
-                    if comboBox.findText( current_item_text )>-1:
-                        comboBox.setCurrentIndex( comboBox.findText(current_item_text ))
-
-                    else:
-                        self.add_customlist_item( self.fields[field].list_name  , current_item_text, ui_field)
-
-                horizontalLayout.addWidget(comboBox)
-
-                setattr(self, field+'add_btn', QPushButton(horizontalLayoutWidget))
-                pushButton = getattr(self, field+'add_btn')
-                pushButton.setObjectName( field+"add_btn")
-                pushButton.setMinimumSize(QSize(25, 25))
-                pushButton.setMaximumSize(QSize(25, 25))
-                pushButton.setIcon(self.app.Styler.get_icon('add'))
-                getattr(self, field+'add_btn').clicked.connect(partial(add_costomlist_item_Window, self, self.add_customlist_item, self.fields[field].list_name, comboBox))
-                horizontalLayout.addWidget(pushButton)
-                self.gridLayout.addWidget(horizontalLayoutWidget, position_index, 1, 1, 1)
-
-
-
-
-
-            elif self.fields[field].field_type == 'DictField':
-
-                setattr(self, field, QtWidgets.QComboBox(Form) )
-                ui_field = vars(self)[field]
-                ui_field.setObjectName(field)
-                
-                for item in self.fields[field].item_dict:#set all dict items
-                    ui_field.addItem(str(item))
-
-                if edit_mode:# select current item
-                    if obj_mode:
-                        item_text = getattr(item_obj, field)
-                    
-                    else:
-                        item_text = dict_data[field]
-
-                    if type(item_text) == str:
-                        item_text = item_text
-
-                    else:
-                        item_text = str(item_text)
-
-
-                    if ui_field.findText( item_text )>-1:
-                        ui_field.setCurrentIndex( ui_field.findText( item_text ) )
-
-                subfields = self.fields[field].subfields
-                for subfield in subfields:
-                    dictlist_4_sublist.append({
-                                'subfield_name' : subfield,
-                                'mainfield_name':field,
-                            })
-                            
-
-                ui_field.currentIndexChanged.connect(partial(self.change_subdict_field, [field, self.fields[field].subfields, self.fields]))
-                self.gridLayout.addWidget(ui_field, position_index, 1, 1, 1)
-
-            elif self.fields[field].field_type == 'OneToOneField':
-
-                setattr(self, field, QtWidgets.QComboBox(Form) )
-                ui_field = vars(self)[field]
-                ui_field.setObjectName(field)
-                
-                objs = getattr(model.INSApp, self.fields[field].model).objects
-                
-                item_text = ''
-                for obj in objs:
-                    ui_field.addItem(str(obj), obj.id)
-
-                if edit_mode:# set current item
-                    if obj_mode:
-                        current_item_text = getattr(model.INSApp, self.fields[field].model).get(id = getattr(item_obj, field))
-
-                    else:
-                        current_item_text = dict_data[field]
-
-                    if ui_field.findText( str(current_item_text) )>-1:
-                        ui_field.setCurrentIndex( ui_field.findText(str(current_item_text)))
-
-
-                self.gridLayout.addWidget(ui_field, position_index, 1, 1, 1)
-
-            elif self.fields[field].field_type == 'ManyToManyField':
-                setattr(self, field+'_gridLayoutWidget', QWidget() )
-                gridLayoutWidget = vars(self)[field+'_gridLayoutWidget']
-                gridLayoutWidget.setObjectName(field+"_gridLayoutWidget")
-
-                setattr(self, field+'_gridLayout',  QGridLayout(gridLayoutWidget))
-                gridLayout = vars(self)[field+'_gridLayout']
-                gridLayout.setObjectName(field+'_gridLayout')
-                gridLayout.setContentsMargins(2, 2, 2, 2)
-
-
-                label = QtWidgets.QLabel(Form)
-                label.setObjectName(field+"label")
-                label.setAlignment(Qt.AlignCenter)
-                label.setText( self.translate(field.replace('_',' ').title()))
-                gridLayout.addWidget(label, 0, 0, 1, 3)
-
-                setattr(self, field+'_add_button', QPushButton(gridLayoutWidget))              
-                add_button = vars(self)[field+'_add_button']
-                add_button.setObjectName(field+"add_button")
-                add_button.setToolTip(self.translate('add'))
-                add_button.setIcon(self.app.Styler.get_icon('add'))
-                add_button.setMinimumSize(QSize(25, 25))
-                add_button.setMaximumSize(QSize(25, 25))
-                add_button.clicked.connect( partial(self.call_add_subitem_window, [self.fields[field].subfields, field,self.fields[field] ]) )
-                gridLayout.addWidget(add_button, 1, 2, 1, 1)
-
-                setattr(self, field+'_remove_button', QPushButton(gridLayoutWidget))
-                remove_button = vars(self)[field+'_remove_button']
-                remove_button.setObjectName(field+"_remove_button")
-                remove_button.setToolTip(self.translate('remove'))
-                remove_button.setIcon(self.app.Styler.get_icon('delete'))
-                remove_button.setMinimumSize(QSize(25, 25))
-                remove_button.setMaximumSize(QSize(25, 25))
-                remove_button.setProperty('btn_type','delete')
-                remove_button.clicked.connect( partial(self.remove_subitem, field))
-                gridLayout.addWidget(remove_button, 1, 1, 1, 1)
-
-                setattr(self, field+'_listWidget', QListWidget(gridLayoutWidget))
-                setattr(self.item_obj  , field+'_data', [])
-                listWidget = vars(self)[field+'_listWidget']
-                listWidget.setObjectName(field+'_listWidget')
-                listWidget.setMinimumSize(QSize(100, 100))
-                listWidget.itemDoubleClicked.connect(partial(self.call_edit_subitem_window, listWidget, field ))
-
-                gridLayout.addWidget(listWidget, 2, 0, 1, 3)
-
-
-                if edit_mode:
-                    if obj_mode:
-                        fields_data = getattr(self.item_obj, field)
-                    else:
-                        fields_data = dict_data[field]
-
-                    if type(fields_data) == str:
-                        setattr(self.item_obj, field+'_data', json.loads(fields_data.replace("'",'"')) )
-                    else:
-                        setattr(self.item_obj, field+'_data', fields_data)
-
-                    dict_data = getattr(self.item_obj, field+'_data')
-
-                    for subfield in dict_data:
-                        view_name = item_obj.model.fields[field].view_name
-                        
-                        
-                        view_name = replace_variable_value(view_name, data = subfield)
-                        if type(view_name) not in [str, int]:
-                            view_name = ''.join([ str(i) for i in view_name])
-
-                        view_name = str(view_name)
-
-                        item_ui = QtWidgets.QListWidgetItem()
-                        item_ui.setText(view_name)
-                        item_ui.setToolTip(replace_variable_value( item_obj.model.fields[field].tooltip,data = subfield))
-                        item_ui.setData(6,subfield)
-                        listWidget.addItem(item_ui)
-
-                else: # creation mode
-                    setattr(self.item_obj, field+'_data', [])
-
-                
-                if self.ManyToManyField_pos == 1:
-                    position_index-=1
-
-                if self.fields[field].single_view:
-                    self.gridLayout.addWidget(gridLayoutWidget, position_index, 0, 1, 2)
-
-                else:
-                    self.gridLayout.addWidget(gridLayoutWidget, position_index, self.ManyToManyField_pos, 1, 1)
-                    self.ManyToManyField_pos = (self.ManyToManyField_pos * (-1)) +1
-               
-
             
-            elif self.fields[field].field_type == 'DateField':
-                setattr(self, field, self.fields[field].UI_Field(Form) )
-                ui_field = vars(self)[field]
-                ui_field.setObjectName(field)
-                ui_field.setDisplayFormat('MM/dd/yyyy')
+            
                 
-                if edit_mode:
-                    if obj_mode:
-                        field_value = str(getattr(self.item_obj, field))
-                    else:
-                        field_value = dict_data[field]
+            OLF = self.fields[field].view(self, Form, field, position_index) # on load function
+            if OLF != None:
+                if OLF.get('on_load_function') != None:
+                    on_load_function    +=  OLF.get('on_load_function')
 
-                    ui_field.setDate(datetime.date.fromisoformat(field_value))
-
-                self.gridLayout.addWidget(ui_field, position_index, 1, 1, 1)
-
-
-            else:
-                setattr(self, field, self.fields[field].UI_Field(Form) )
-                ui_field = vars(self)[field]
-                ui_field.setObjectName(field)
-                for pr in self.fields[field].properties:
-                    getattr(ui_field, pr['property_name'])(pr['value'])
-                
-                if edit_mode:
-                    if obj_mode:
-                        field_value = self.fields[field].TYPE(getattr(self.item_obj, field) )
-                    else:
-                        field_value = self.fields[field].TYPE(dict_data[field])
-
-                    getattr(ui_field, self.fields[field].Set_UI_Value_Function )(field_value)
-
-                self.gridLayout.addWidget(ui_field, position_index, 1, 1, 1)
+                if OLF.get('dictlist_4_sublist') != None:
+                    dictlist_4_sublist  +=  OLF.get('dictlist_4_sublist')
+                    
+ 
 
             # label
             if self.fields[field].field_type not in  ['ManyToManyField',]:
@@ -775,7 +496,6 @@ class View_Item_Ui_Form(object):
                 self.gridLayout.addWidget(label, position_index, 0, 1, 1)
 
             position_index+=1
-        
         for DL_subfield in dictlist_4_sublist:
                 DL_ui_field = vars(self)[DL_subfield['mainfield_name']]
                 DL_items    = self.fields[DL_subfield['mainfield_name']].item_dict
@@ -790,7 +510,9 @@ class View_Item_Ui_Form(object):
                     current_SF  = vars(self.item_obj)[DL_subfield['subfield_name']]
                     if SF.findText( current_SF )>-1:
                         SF.setCurrentIndex( SF.findText( current_SF ) )
-                    
+        
+        for f in on_load_function:
+            f()
 
         self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 3)
         self.Form.setStyleSheet(self.app.currentStyle)
@@ -826,54 +548,6 @@ def edit_item_window(item):
     app.UI.subwindow.setWindowModality(QtCore.Qt.ApplicationModal)
     app.UI.subwindow.setAttribute(QtCore.Qt.WA_DeleteOnClose)
     app.UI.subwindow.show()
-
-
-
-
-##############################################################################
-##############################################################################
-##############################################################################
-
-
-
-
-class add_costomlist_item_Form(object):
-    def setupUi(self, Form, data_receiver, list_name, ui_list):
-        Form.setObjectName("Form")
-        Form.resize(318, 159)
-        self.gridLayout = QtWidgets.QGridLayout(Form)
-        self.gridLayout.setObjectName("gridLayout")
-        self.item = QtWidgets.QLineEdit(Form)
-        self.item.setObjectName("item")
-        self.item.setPlaceholderText(self.app.translate('Item Name...'))
-        self.gridLayout.addWidget(self.item, 0, 0, 1, 1)
-        self.add_btn = QtWidgets.QPushButton(Form)
-        self.add_btn.setMaximumSize(QtCore.QSize(200, 16777215))
-        self.add_btn.setObjectName("add_btn")
-        self.add_btn.setMinimumSize(QSize(30, 30))
-        self.add_btn.setMaximumSize(QSize(30, 30))
-        self.add_btn.setIcon(self.app.Styler.get_icon('add'))
-        self.add_btn.clicked.connect(lambda: data_receiver(list_name, self.item.text(), ui_list, Form))
-        self.gridLayout.addWidget(self.add_btn, 1, 0, 1, 1, QtCore.Qt.AlignHCenter)
-
-        QtCore.QMetaObject.connectSlotsByName(Form)
-
-
-
-def add_costomlist_item_Window(main_ui, data_receiver, list_name, ui_list):
-    
-    main_ui.subwindow = QtWidgets.QDialog()
-
-    ui = add_costomlist_item_Form()
-    ui.app = main_ui.model.INSApp
-    ui.setupUi(main_ui.subwindow, data_receiver, list_name, ui_list)
-    main_ui.subwindow.ui = ui
-    
-    main_ui.subwindow.setProperty('form_type', 'subwindow')
-    main_ui.subwindow.setStyleSheet(main_ui.model.INSApp.currentStyle)
-    main_ui.subwindow.setWindowModality(QtCore.Qt.ApplicationModal)
-    main_ui.subwindow.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-    main_ui.subwindow.show()
 
 
 

@@ -1,4 +1,4 @@
-import configparser, os, json, notify2
+import configparser, os, json, notifiers
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import *
 
@@ -62,7 +62,6 @@ class translator(object):
 
 
     def set_language(self, app, p_ui):
-        print('sssad')
         app.current_language = p_ui.Languages_Box.currentData()
         self.language = p_ui.Languages_Box.currentData()
         self.apply_language(app)
@@ -71,7 +70,7 @@ class translator(object):
     def add_language(self, app, p_ui):
         config = configparser.ConfigParser()
         config.read( os.path.join('INSLPCModel','settings.ini'))
-        file_name=QFileDialog.getOpenFileName(p_ui, self.translate(f"Add language"),config['settings']['last_opened_location'],f"Language Files (*.{ app.app_file_type }l)")
+        file_name=QFileDialog.getOpenFileName(p_ui.Form, self.translate(f"Add language"),config['settings']['last_opened_location'],f"Language Files (*.{ app.app_file_type }l)")
         if len(file_name[0])>0:
             try:
                 new_language = configparser.ConfigParser()
@@ -92,11 +91,11 @@ class translator(object):
                 new_language_file.read(new_language_file_path)
                 new_language_file.write(open(file_name[0],'w'))
                 config.write(open('settings.ini','w'))
-                notify2.Notification( self.translate("Success"),self.translate("Language added successfully") ,app.app_logo ).show()
+                notifiers.Notification( self.translate("Success"),self.translate("Language added successfully") ,app.app_logo ).show()
                 self.apply_language(app)
 
             except:
-                notify2.Notification( self.translate("Error"),self.translate("Error while loading language file \ n try to redownload it from credom.it") ,app.app_logo ).show()
+                notifiers.Notification( self.translate("Error"),self.translate("Error while loading language file \ n try to redownload it from credom.it") ,app.app_logo ).show()
 
             
             

@@ -1,5 +1,5 @@
 from typing import NewType
-import notify2, re
+import notifiers, re
 from . import Statements
 
 
@@ -65,7 +65,7 @@ def chack_static_statement_status(statement, app, item = None , data= None):
         if not status:
             error_msg = statement.get('error_msg')
             if error_msg !=None:
-                notify2.Notification( app.translate(statement.get('error_msg')),app.translate(error_msg) ,app.app_logo ).show()
+                notifiers.Notification( app.translate(statement.get('error_msg')),app.translate(error_msg) ,app.app_logo ).show()
 
     return status
         

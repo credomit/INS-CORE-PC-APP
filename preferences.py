@@ -22,6 +22,7 @@ def open_preferences_window(app):
 
 class Preferences_Ui(object):
     def setupUi(self, Form,app):
+        self.Form = Form
         Form.setObjectName("Form")
         Form.resize(489, 257)
         self.gridLayout = QtWidgets.QGridLayout(Form)
@@ -34,6 +35,7 @@ class Preferences_Ui(object):
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.label = QtWidgets.QLabel(self.tab)
         self.label.setObjectName("label")
+        self.label.setText('Language')
         self.gridLayout_2.addWidget(self.label, 0, 0, 1, 1, QtCore.Qt.AlignRight)
         self.Languages_Box = QtWidgets.QComboBox(self.tab)
         self.Languages_Box.setObjectName("Languages_Box")
@@ -46,6 +48,7 @@ class Preferences_Ui(object):
         self.gridLayout_2.addWidget(self.Add_Language_btn, 0, 2, 1, 1)
         self.label_2 = QtWidgets.QLabel(self.tab)
         self.label_2.setObjectName("label_2")
+        self.label_2.setText('Theme')
         self.gridLayout_2.addWidget(self.label_2, 1, 0, 1, 1, QtCore.Qt.AlignRight)
         self.Themes_Box = QtWidgets.QComboBox(self.tab)
         self.Themes_Box.setObjectName("Themes_Box")
@@ -56,7 +59,7 @@ class Preferences_Ui(object):
         self.Add_Theme_btn.setMaximumSize(QSize(30, 30))
         self.Add_Theme_btn.setIcon(app.Styler.get_icon('add'))
         self.gridLayout_2.addWidget(self.Add_Theme_btn, 1, 2, 1, 1)
-        self.tabWidget.addTab(self.tab, "")
+        self.tabWidget.addTab(self.tab, "View")
         self.tab_2 = QtWidgets.QWidget()
         self.tab_2.setObjectName("tab_2")
         self.tabWidget.addTab(self.tab_2, "")
@@ -91,7 +94,6 @@ class Preferences_Ui(object):
 
         def add_style(self, app, Form):
             added_theme = app.Styler.add_style(Form)
-            print(added_theme)
             if added_theme != None:
                 self.Themes_Box.insertItem(0,added_theme)
                 self.Themes_Box.setCurrentIndex( self.Themes_Box.findText(added_theme))
