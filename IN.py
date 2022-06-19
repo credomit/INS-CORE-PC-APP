@@ -1,26 +1,24 @@
 from PyQt5 import QtWidgets, uic
 import requests, configparser, os, json
+from INSLPCModel import configuration_ini
 from getmac import get_mac_address 
 from .windows_creator import *
-import threading
+import threading, socket
 
 def back_connections(app):
-    config = configparser.ConfigParser()
-    config.read( os.path.join('INSLPCModel','settings.ini'))
+    config = configuration_ini.get_data(['INSLPCModel','settings.ini'])
 
     def back_check_key(app):
-        config = configparser.ConfigParser()
-        config.read( os.path.join('INSLPCModel','settings.ini'))
+        config = configuration_ini.get_data(['INSLPCModel','settings.ini'])
 
-        device      = os.uname().nodename
-        mac_addr    = get_mac_address()
+        device      = socket.gethostname()
         app_name    = app.app_name
         app_version = app.app_version
         key = config['settings']['key']
 
-        while True:
-            #try:
-                print('sending request')
+        if True:
+            try:
+                mac_addr    = get_mac_address()
                 con = requests.post('http://credom.herokuapp.com/check_product_key/',{'key':key, 'app':app_name, 'version':app_version, 'mac-addr':mac_addr,'device':device})
                 if not int(json.loads(con.content).get('status')):
                     config['settings']['insci'] = '0'
@@ -35,20 +33,20 @@ def back_connections(app):
                         pass
                     INSCI(app)
                 
-                break
-            #except:
-            #    pass
+                pass
+            except:
+                pass
     if int(config['settings']['insci']):
-        threading.Thread(target=lambda: back_check_key(app)).start()
+        pass
+        #threading.Thread(target=lambda: back_check_key(app)).start()
 
 def check_INSCI(app):
-    device      = os.uname().nodename
-    mac_addr    = get_mac_address()
+    device      = socket.gethostname()
     app_name    = app.app_name
     app_version = app.app_version
     key = app.INSCI_UI.key_field.text()
-    
     try:
+        mac_addr    = get_mac_address()
         app.INSCI_UI.status_label.setText('Loading...')
         app.INSCI_UI.status_label.update()
         app.INSCI_UI.update()
@@ -57,8 +55,7 @@ def check_INSCI(app):
         app.INSCI_UI.status_label.setText( json.loads(con.content).get('msg'))
         if  json.loads(con.content).get('status'):
             app.INSCI_UI.close()
-            config = configparser.ConfigParser()
-            config.read( os.path.join('INSLPCModel','settings.ini'))
+            config = configuration_ini(['INSLPCModel','settings.ini'])
             config['settings']['INSCI'] = '1'
             config['settings']['KEY']   =  key
             config.write(open(os.path.join('INSLPCModel','settings.ini'),'w'))
@@ -67,20 +64,18 @@ def check_INSCI(app):
 
         
     except Exception as a:
-        print(a)
         app.INSCI_UI.status_label.setText('No internet connection')
 
 
 def INSCI(self):
-    config = configparser.ConfigParser()
-    config.read( os.path.join('INSLPCModel','settings.ini'))
+    config = configuration_ini.get_data(['INSLPCModel','settings.ini'])
     INSCI_status = int(config['settings']['INSCI'])
-    if False: #not INSCI_status:
+    if not INSCI_status:
         self.getkey                 = os.path.join('INSLPCModel','get_product_key.ui')
         self.get_key_window              = QtWidgets.QDialog()
         self.INSCI_UI               = uic.loadUi(self.getkey, self.get_key_window)
         self.INSCI_UI.app_logo.setIcon(self.Styler.get_icon('main_logo'))
-        self.get_key_window.setWindowTitle('INS Production Plan')
+        self.get_key_window.setWindowTitle('INS Warehouse')
         self.get_key_window.setProperty('form_type', 'subwindow')
         self.get_key_window.setStyleSheet(self.currentStyle)
         self.get_key_window.show()

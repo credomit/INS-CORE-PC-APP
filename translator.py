@@ -1,4 +1,5 @@
-import configparser, os, json, notifiers
+import configparser, os, json, notifiers, codecs
+from INSLPCModel import configuration_ini
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import *
 
@@ -9,8 +10,7 @@ class translator(object):
             os.mkdir('languages')
 
         
-        config = configparser.ConfigParser()
-        config.read( os.path.join('INSLPCModel','settings.ini'))
+        config = configuration_ini.get_data(['INSLPCModel','settings.ini'])
         self.language = config['default']['default-language']
         
         
@@ -18,8 +18,7 @@ class translator(object):
 
 
     def apply_language(self,app):
-        language = configparser.ConfigParser()
-        language.read(os.path.join('languages', f'{self.language}.ini'))
+        language = configuration_ini.get_data(['languages', f'{self.language}.ini'])
 
         if len(language._sections) == 0: #new file
             language['language_info'] = { 'language_shortcut': self.language, 'language_name': ''}  
@@ -35,11 +34,19 @@ class translator(object):
                 print(f'\033[31mLabel "{label}" Not Found!  \033[0m')    
                 exit()
        
+        for tab_widget in app.translateable_tap_widgets:
+           tab_index = 0
+           while True:
+                try:
+                    getattr(app.UI, tab_widget).setTabText(tab_index, self.translate(getattr(app.UI, tab_widget).widget(tab_index).accessibleName()))    
+                    tab_index+=1
+                except:
+                    break
         # 
         if 'Layout_direction' in language['language_info']:
             app.current_language_layout_direction = language['language_info']['Layout_direction']
+            app.UI.Layout_direction = language['language_info']['Layout_direction']
             if language['language_info']['Layout_direction'] == 'RTL':
-                
                 app.UI.setLayoutDirection(QtCore.Qt.RightToLeft)
 
             else:
@@ -51,8 +58,7 @@ class translator(object):
 
 
 
-        config = configparser.ConfigParser()
-        config.read( os.path.join('INSLPCModel','settings.ini'))
+        config = configuration_ini.get_data(['INSLPCModel','settings.ini'])
         languages =  json.loads(config['languages']['set'])
 
         app.current_language = self.language
@@ -68,13 +74,11 @@ class translator(object):
         
 
     def add_language(self, app, p_ui):
-        config = configparser.ConfigParser()
-        config.read( os.path.join('INSLPCModel','settings.ini'))
+        config = configuration_ini.get_data(['INSLPCModel','settings.ini'])
         file_name=QFileDialog.getOpenFileName(p_ui.Form, self.translate(f"Add language"),config['settings']['last_opened_location'],f"Language Files (*.{ app.app_file_type }l)")
         if len(file_name[0])>0:
             try:
-                new_language = configparser.ConfigParser()
-                new_language.read(file_name[0])
+                new_language = configuration_ini.get_data(file_name[0].replace('/','\\').split('\\'))
                 languages_set = json.loads(config['languages']['set'])
                 new_lang_name = new_language['language_info']['language_name']
                 new_lan_shortcut = new_language['language_info']['language_shortcut']
@@ -82,13 +86,10 @@ class translator(object):
                 if { new_lang_name : new_lan_shortcut } not in languages_set:
                     languages_set += [{ new_lang_name : new_lan_shortcut },]
                 
-                config['languages']['set'] = json.dumps(languages_set)
-                config['default']['default-language'] = new_language['language_info']['language_shortcut']
-                
-                new_language_file= configparser.ConfigParser()
+                configuration_ini.set_data(['INSLPCModel','settings.ini'], 'languages', 'set', json.dumps(languages_set))
+                configuration_ini.set_data(['INSLPCModel','settings.ini'], 'default', 'default-language', new_language['language_info']['language_shortcut'])
 
-                new_language_file_path = os.path.join('languages', new_language['language_info']['language_shortcut']+'.ini' )
-                new_language_file.read(new_language_file_path)
+                new_language_file = configuration_ini.get_data(['languages', new_language['language_info']['language_shortcut']+'.ini' ])
                 new_language_file.write(open(file_name[0],'w'))
                 config.write(open('settings.ini','w'))
                 notifiers.Notification( self.translate("Success"),self.translate("Language added successfully") ,app.app_logo ).show()
@@ -103,15 +104,14 @@ class translator(object):
 
 
     def translate(self, text):
-        language = configparser.ConfigParser()
-        language.read(os.path.join('languages', f'{self.language}.ini'))
+        language = configuration_ini.get_data(['languages', f'{self.language}.ini'])
 
         if text.lower() in language._sections['dictionary'].keys():
             return language['dictionary'][text]
 
         else:
-            language['dictionary'][text] = ''
-            language.write(open(os.path.join('languages', f'{self.language}.ini'),'w'))
-
+            configuration_ini.set_data(['languages', f'{self.language}.ini'], 'dictionary', text, text.lower())
+            
+            
             print(f'\033[31m TEXT "{text}" not founded in { self.language } language file \033[93m text added automatically with empty value to languages/{self.language}.ini \033[0m ')
-            return 'NOT TRANSLATED'
+            return text.lower()

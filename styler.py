@@ -1,7 +1,8 @@
 
-import os, configparser
+import os
+from INSLPCModel import configuration_ini
 from PyQt5.QtWidgets import *
-from PyQt5 import QtGui
+from PyQt5 import QtGui, QtCore
 
 class Styler(object):
 
@@ -9,8 +10,7 @@ class Styler(object):
         self.icons = {}  
         self.app = app
 
-        config = configparser.ConfigParser()
-        config.read( os.path.join('INSLPCModel','settings.ini'))
+        config = configuration_ini.get_data(['INSLPCModel','settings.ini'])
         if not os.path.exists('styles'):
             os.mkdir('styles')
         app.currentStyleName = config['style']['current']
@@ -23,7 +23,21 @@ class Styler(object):
             return self.icons[name]
         else:
             icon	= QtGui.QIcon()
-            icon.addPixmap(QtGui.QPixmap(os.path.join('INSLPCModel', 'icons',name+'.png')), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+            try:
+                open(os.path.join('INSLPCModel', 'icons',name+'.png'))
+                pixmap = QtGui.QPixmap(os.path.join('INSLPCModel', 'icons',name+'.png'))
+            except:
+                pixmap = QtGui.QPixmap(os.path.join('icons',name+'.png'))
+
+            style_icon_colors = configuration_ini.get_data(['INSLPCModel','styles.ini'])
+            for color in style_icon_colors[self.app.currentStyleName]:
+                mask = pixmap.createMaskFromColor(QtGui.QColor('#'+color), QtCore.Qt.MaskOutColor)
+                pen = QtGui.QPainter(pixmap)
+                pen.setPen(QtGui.QColor('#'+style_icon_colors[self.app.currentStyleName][color]))
+                pen.drawPixmap(pixmap.rect(), mask, mask.rect())
+                pen.end()
+            
+            icon.addPixmap(pixmap)
             self.icons[name] = icon
             return icon
 
@@ -32,12 +46,10 @@ class Styler(object):
         
         self.app.currentStyleName = style
 
-        config = configparser.ConfigParser()
-        config.read( os.path.join('INSLPCModel','settings.ini'))
+        config = configuration_ini.get_data(['INSLPCModel','settings.ini'])
         config['style']['current'] = style
         config.write(open(os.path.join('INSLPCModel','settings.ini'),'w'))
         self.app.currentStyleName = config['style']['current']
-        print(self.app.currentStyleName)
         self.apply_style()
 
 
@@ -49,11 +61,14 @@ class Styler(object):
 	
         
     def add_style(self, p_ui):
-        config = configparser.ConfigParser()
-        config.read( os.path.join('INSLPCModel','settings.ini'))
-        file_name=QFileDialog.getOpenFileName(p_ui, self.app.translate(f"Add language"),config['settings']['last_opened_location'],f"Theme Files (*.css)")
+        config = configuration_ini.get_data(['INSLPCModel','settings.ini'])
+        file_name=QFileDialog.getOpenFileName(p_ui, self.app.translate(f"Add language"),f"Theme Files (*.css)")
         if len(file_name[0])>0 :
+            style_data = configuration_ini.get_data(os.path.basename(file_name[0]))
             new_file = open(os.path.join('styles',os.path.basename(file_name[0])), 'w')
-            new_file.write(open(file_name[0], 'r').read())
+            new_file.write(style_data.get('data').get('full-style'))
             new_file.close()
+
+            styles = configuration_ini.get_data(['INSLPCModel','styles.ini'])
+            styles[style_data.get('info').get('name')]['icon-color'] = style_data.get('info').get('icon-color')
             return os.path.basename(file_name[0]).split('.')[0]
